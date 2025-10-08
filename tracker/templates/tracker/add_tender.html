@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Tender</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #10b981;
+            --secondary-color: #059669;
+            --success-color: #10b981;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 40px 0;
+        }
+        
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .form-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .form-header i {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+        
+        .form-header h2 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 2rem;
+        }
+        
+        .form-header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+        
+        .form-body {
+            padding: 40px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-label i {
+            color: var(--primary-color);
+            font-size: 1rem;
+        }
+        
+        .form-label .required {
+            color: #ef4444;
+            font-size: 1.2rem;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px 15px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+            outline: none;
+        }
+        
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2310b981' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 16px 12px;
+        }
+        
+        .form-text {
+            color: #6b7280;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-cancel {
+            background: #6b7280;
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            margin-top: 15px;
+        }
+        
+        .btn-cancel:hover {
+            background: #4b5563;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+        }
+        
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0 0 0;
+        }
+        
+        .errorlist li {
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .input-group-text {
+            background-color: #d1fae5;
+            border: 2px solid #e5e7eb;
+            border-right: none;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .input-group .form-control {
+            border-left: none;
+        }
+        
+        .input-group:focus-within .input-group-text {
+            border-color: var(--primary-color);
+            background-color: rgba(16, 185, 129, 0.15);
+        }
+        
+        .date-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 576px) {
+            .date-inputs {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .payment-status-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .status-option {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .status-option input[type="radio"] {
+            display: none;
+        }
+        
+        .status-label {
+            display: block;
+            padding: 12px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .status-label:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(16, 185, 129, 0.05);
+        }
+        
+        .status-option input[type="radio"]:checked + .status-label {
+            border-color: var(--primary-color);
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .status-pending .status-label {
+            color: #92400e;
+        }
+        
+        .status-partial .status-label {
+            color: #1e40af;
+        }
+        
+        .status-paid .status-label {
+            color: #065f46;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-header">
+            <i class="fas fa-file-contract"></i>
+            <h2>Add New Tender</h2>
+            <p>Create a new tender for tracking and management</p>
+        </div>
+        
+        <div class="form-body">
+            {% if form.errors %}
+                <div class="alert alert-danger alert-custom">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Please correct the errors below.
+                </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ form.tender_no.id_for_label }}" class="form-label">
+                        <i class="fas fa-hashtag"></i>
+                        Tender Number
+                        <span class="required">*</span>
+                    </label>
+                    <input type="text" 
+                           name="{{ form.tender_no.name }}" 
+                           id="{{ form.tender_no.id_for_label }}"
+                           class="form-control {% if form.tender_no.errors %}is-invalid{% endif %}" 
+                           value="{{ form.tender_no.value|default:'' }}"
+                           placeholder="e.g., TDR-2024-001"
+                           required>
+                    <small class="form-text">Unique identifier for the tender</small>
+                    {% if form.tender_no.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.tender_no.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.company.id_for_label }}" class="form-label">
+                        <i class="fas fa-building"></i>
+                        Company
+                        <span class="required">*</span>
+                    </label>
+                    <select name="{{ form.company.name }}" 
+                            id="{{ form.company.id_for_label }}"
+                            class="form-select {% if form.company.errors %}is-invalid{% endif %}"
+                            required>
+                        <option value="">Select a company...</option>
+                        {% for choice in form.company.field.choices %}
+                            {% if choice.0 %}
+                                <option value="{{ choice.0 }}" {% if form.company.value == choice.0|stringformat:"s" %}selected{% endif %}>
+                                    {{ choice.1 }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <small class="form-text">Select the company responsible for this tender</small>
+                    {% if form.company.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.company.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.client_name.id_for_label }}" class="form-label">
+                        <i class="fas fa-user-tie"></i>
+                        Client Name
+                        <span class="required">*</span>
+                    </label>
+                    <input type="text" 
+                           name="{{ form.client_name.name }}" 
+                           id="{{ form.client_name.id_for_label }}"
+                           class="form-control {% if form.client_name.errors %}is-invalid{% endif %}" 
+                           value="{{ form.client_name.value|default:'' }}"
+                           placeholder="e.g., ABC Corporation"
+                           required>
+                    <small class="form-text">Name of the client or organization</small>
+                    {% if form.client_name.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.client_name.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.total_value.id_for_label }}" class="form-label">
+                        <i class="fas fa-dollar-sign"></i>
+                        Total Value
+                        <span class="required">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" 
+                               name="{{ form.total_value.name }}" 
+                               id="{{ form.total_value.id_for_label }}"
+                               class="form-control {% if form.total_value.errors %}is-invalid{% endif %}" 
+                               value="{{ form.total_value.value|default:'' }}"
+                               step="0.01"
+                               min="0"
+                               placeholder="0.00"
+                               required>
+                    </div>
+                    <small class="form-text">Total contract value in dollars</small>
+                    {% if form.total_value.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.total_value.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-credit-card"></i>
+                        Payment Status
+                    </label>
+                    <div class="payment-status-options">
+                        {% for choice in form.payment_status.field.choices %}
+                            <div class="status-option status-{{ choice.0|lower|cut:' ' }}">
+                                <input type="radio" 
+                                       name="{{ form.payment_status.name }}" 
+                                       id="{{ form.payment_status.id_for_label }}_{{ forloop.counter }}" 
+                                       value="{{ choice.0 }}" 
+                                       {% if form.payment_status.value == choice.0 or forloop.first and not form.payment_status.value %}checked{% endif %}>
+                                <label for="{{ form.payment_status.id_for_label }}_{{ forloop.counter }}" class="status-label">
+                                    {{ choice.1 }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <small class="form-text">Current payment status of the tender</small>
+                    {% if form.payment_status.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.payment_status.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-alt"></i>
+                        Project Dates
+                    </label>
+                    <div class="date-inputs">
+                        <div>
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label small-label">
+                                Start Date
+                            </label>
+                            <input type="date" 
+                                   name="{{ form.start_date.name }}" 
+                                   id="{{ form.start_date.id_for_label }}"
+                                   class="form-control {% if form.start_date.errors %}is-invalid{% endif %}" 
+                                   value="{{ form.start_date.value|default:'' }}">
+                            {% if form.start_date.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.start_date.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label small-label">
+                                End Date
+                            </label>
+                            <input type="date" 
+                                   name="{{ form.end_date.name }}" 
+                                   id="{{ form.end_date.id_for_label }}"
+                                   class="form-control {% if form.end_date.errors %}is-invalid{% endif %}" 
+                                   value="{{ form.end_date.value|default:'' }}">
+                            {% if form.end_date.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.end_date.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <small class="form-text">Optional: Project start and end dates</small>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-save"></i>
+                    Save Tender
+                </button>
+                
+                <a href="{% url 'dashboard' %}" class="btn-cancel">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Set today's date as default for start date
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            const startDateField = document.getElementById('{{ form.start_date.id_for_label }}');
+            const endDateField = document.getElementById('{{ form.end_date.id_for_label }}');
+            
+            if (!startDateField.value) {
+                startDateField.value = today;
+            }
+            
+            // Add date validation to ensure end date is not before start date
+            startDateField.addEventListener('change', function() {
+                if (endDateField.value && this.value > endDateField.value) {
+                    endDateField.value = this.value;
+                }
+            });
+            
+            endDateField.addEventListener('change', function() {
+                if (startDateField.value && this.value < startDateField.value) {
+                    this.value = startDateField.value;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
