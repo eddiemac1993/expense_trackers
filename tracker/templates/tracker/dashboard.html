@@ -13,6 +13,7 @@
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --danger-color: #ef4444;
+            --admin-color: #8b5cf6;
         }
         
         body {
@@ -76,6 +77,10 @@
             border-left-color: var(--danger-color);
         }
         
+        .stats-card.admin {
+            border-left-color: var(--admin-color);
+        }
+        
         .stat-icon {
             width: 60px;
             height: 60px;
@@ -105,6 +110,11 @@
         .stat-icon.danger {
             background: rgba(239, 68, 68, 0.1);
             color: var(--danger-color);
+        }
+        
+        .stat-icon.admin {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--admin-color);
         }
         
         .stat-value {
@@ -146,6 +156,11 @@
         
         .btn-custom i {
             font-size: 1.1rem;
+        }
+        
+        .btn-admin {
+            background: linear-gradient(135deg, var(--admin-color), #a78bfa);
+            color: white;
         }
         
         .section-card {
@@ -321,6 +336,9 @@
         </a>
         <a href="{% url 'add_expense' %}" class="btn btn-warning btn-custom">
             <i class="fas fa-receipt"></i> Add Expense
+        </a>
+        <a href="{% url 'admin:index' %}" class="btn btn-custom btn-admin">
+            <i class="fas fa-cog"></i> Admin Panel
         </a>
     </div>
 
