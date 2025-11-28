@@ -1,29 +1,20 @@
 from django import template
-
 register = template.Library()
 
 @register.filter
-def sum_attr(queryset, attr_name):
-    """
-    Sum the values of a specific attribute in a queryset
-    Usage: {{ tenders|sum_attr:'total_value' }}
-    """
-    if not queryset:
-        return 0
+def sum_attr(queryset, attr):
+    """Sum an attribute across a queryset: e.g. tenders|sum_attr:'total_value'"""
     try:
-        return sum(getattr(item, attr_name, 0) for item in queryset if hasattr(item, attr_name))
-    except (TypeError, ValueError):
+        return sum(getattr(x, attr) for x in queryset)
+    except (TypeError, AttributeError):
         return 0
 
 @register.filter
 def filter_status(queryset, status):
-    """
-    Filter a queryset by status
-    Usage: {{ tenders|filter_status:'Pending' }}
-    """
-    if not queryset:
-        return []
-    try:
-        return [item for item in queryset if getattr(item, 'status', None) == status]
-    except (TypeError, ValueError):
-        return []
+    """Filter queryset by payment_status"""
+    return [x for x in queryset if getattr(x, 'payment_status', None) == status]
+
+@register.filter
+def get_item(dictionary, key):
+    """Get item from dictionary"""
+    return dictionary.get(key)

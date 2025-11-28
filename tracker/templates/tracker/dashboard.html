@@ -1,470 +1,645 @@
+{% load static %}
 {% load tracker_filters %}
-{% load humanize %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Company Expense Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
     <style>
-        :root {
-            --primary-color: #4f46e5;
-            --secondary-color: #06b6d4;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --admin-color: #8b5cf6;
+        :root{
+            --accent-1: #0d6efd; /* primary */
+            --accent-2: #6f42c1; /* purple */
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --muted: #6c757d;
+            --glass: rgba(255,255,255,0.7);
+            --shadow: 0 6px 20px rgba(18,38,63,0.08);
         }
-        
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+        html,body{height:100%;background:linear-gradient(180deg,#f7fbff 0%, #f4f7fb 100%);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+        .container-fluid{max-width:1300px}
+
+        /* Header */
+        .topbar{display:flex;gap:1rem;align-items:center;justify-content:space-between;padding:1rem;border-radius:.6rem;background:linear-gradient(90deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));box-shadow:var(--shadow);margin-bottom:1.25rem}
+        .brand{display:flex;align-items:center;gap:.75rem}
+        .brand .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;box-shadow:0 6px 18px rgba(12,60,255,0.12)}
+        h1.h3{margin:0;font-weight:600}
+
+        /* Action buttons */
+        .admin-btn{background:linear-gradient(45deg,#ff6b6b,#ee5a24);border:none;box-shadow:0 6px 18px rgba(238,90,36,0.12)}
+        .btn-outline-primary{border-color:rgba(13,110,253,0.12)}
+
+        /* Filter Section */
+        .filter-section{background:transparent;padding:1rem;margin-bottom:1.25rem}
+        .filter-card{background:var(--card);border-radius:.6rem;padding:1.15rem;box-shadow:var(--shadow)}
+        .form-label{font-size:.85rem;color:var(--muted)}
+
+        /* Summary cards */
+        .summary-card{border-radius:.6rem;padding:1rem;background:linear-gradient(180deg,#fff,#fbfdff);box-shadow:var(--shadow);border:1px solid rgba(12,63,255,0.03)}
+        .summary-value{font-size:1.35rem;font-weight:700}
+        .summary-sub{font-size:.8rem;color:var(--muted)}
+
+        /* Status badges */
+        .status-badge{font-size:.75rem;padding:.45rem .6rem;border-radius:999px}
+
+        /* Table */
+        .card .table thead th{border-bottom:0;padding-top:.9rem;padding-bottom:.9rem}
+        .table tbody tr{transition:all .15s ease}
+        .table tbody tr:hover{transform:translateY(-3px);box-shadow:0 10px 20px rgba(12,38,63,0.04)}
+        .table-actions a,.table-actions button{margin-right:.35rem}
+
+        /* Chart card */
+        .chart-card{padding:1rem;border-radius:.6rem;background:linear-gradient(180deg,#fff,#fbfdff);box-shadow:var(--shadow)}
+        .chart-legend{display:flex;gap:.6rem;align-items:center}
+
+        /* Empty state */
+        .empty-state{padding:3rem 1rem}
+
+        /* Responsive */
+        @media (max-width:768px){
+            .brand h1{font-size:1rem}
+            .summary-value{font-size:1.05rem}
+            .topbar{flex-direction:column;align-items:flex-start}
         }
-        
-        .main-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            margin: 30px auto;
-            padding: 30px;
-        }
-        
-        .page-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
-        }
-        
-        .page-header h1 {
-            margin: 0;
-            font-weight: 700;
-            font-size: 2.5rem;
-        }
-        
-        .page-header p {
-            margin: 10px 0 0 0;
-            opacity: 0.9;
-        }
-        
-        .stats-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            border-left: 5px solid var(--primary-color);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .stats-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-        }
-        
-        .stats-card.success {
-            border-left-color: var(--success-color);
-        }
-        
-        .stats-card.warning {
-            border-left-color: var(--warning-color);
-        }
-        
-        .stats-card.danger {
-            border-left-color: var(--danger-color);
-        }
-        
-        .stats-card.admin {
-            border-left-color: var(--admin-color);
-        }
-        
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            margin-bottom: 15px;
-        }
-        
-        .stat-icon.primary {
-            background: rgba(79, 70, 229, 0.1);
-            color: var(--primary-color);
-        }
-        
-        .stat-icon.success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success-color);
-        }
-        
-        .stat-icon.warning {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--warning-color);
-        }
-        
-        .stat-icon.danger {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger-color);
-        }
-        
-        .stat-icon.admin {
-            background: rgba(139, 92, 246, 0.1);
-            color: var(--admin-color);
-        }
-        
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 10px 0;
-        }
-        
-        .stat-label {
-            color: #6b7280;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-        
-        .btn-custom {
-            padding: 12px 25px;
-            border-radius: 10px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s ease;
-            border: none;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .btn-custom:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .btn-custom i {
-            font-size: 1.1rem;
-        }
-        
-        .btn-admin {
-            background: linear-gradient(135deg, var(--admin-color), #a78bfa);
-            color: white;
-        }
-        
-        .section-card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-        }
-        
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 3px solid #e5e7eb;
-        }
-        
-        .section-header i {
-            font-size: 1.8rem;
-            color: var(--primary-color);
-        }
-        
-        .section-header h4 {
-            margin: 0;
-            font-weight: 700;
-            color: #1f2937;
-        }
-        
-        .company-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            list-style: none;
-            padding: 0;
-        }
-        
-        .company-item {
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid var(--primary-color);
-            transition: all 0.3s ease;
-        }
-        
-        .company-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .company-name {
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: #1f2937;
-            margin-bottom: 8px;
-        }
-        
-        .company-details {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            color: #6b7280;
-            font-size: 0.9rem;
-        }
-        
-        .company-details i {
-            margin-right: 8px;
-            color: var(--primary-color);
-        }
-        
-        .table-responsive {
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        .custom-table {
-            margin: 0;
-        }
-        
-        .custom-table thead {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-        }
-        
-        .custom-table thead th {
-            border: none;
-            padding: 15px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-        }
-        
-        .custom-table tbody tr {
-            transition: background-color 0.3s ease;
-        }
-        
-        .custom-table tbody tr:hover {
-            background-color: #f9fafb;
-        }
-        
-        .custom-table tbody td {
-            padding: 15px;
-            vertical-align: middle;
-            border-color: #e5e7eb;
-        }
-        
-        .badge-custom {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.8rem;
-        }
-        
-        .badge-pending {
-            background-color: #fef3c7;
-            color: #92400e;
-        }
-        
-        .badge-partial {
-            background-color: #dbeafe;
-            color: #1e40af;
-        }
-        
-        .badge-paid {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #9ca3af;
-        }
-        
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
-        
-        .profit-positive {
-            color: var(--success-color);
-            font-weight: 600;
-        }
-        
-        .profit-negative {
-            color: var(--danger-color);
-            font-weight: 600;
-        }
-        
-        .currency {
-            font-size: 0.8em;
-            margin-right: 2px;
-        }
+
+        /* Utility */
+        .text-muted-small{color:var(--muted);font-size:.85rem}
+        .badge-pill{border-radius:999px}
     </style>
 </head>
 <body>
-<div class="container main-container">
-    <div class="page-header">
-        <h1><i class="fas fa-chart-line"></i> Company Expense Dashboard</h1>
-        <p>Manage your companies, tenders, and expenses efficiently</p>
-    </div>
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="topbar">
+            <div class="brand">
+                <a href="#" onclick="location.reload();return false;" class="logo" title="Reload page">ET</a>
+                <div>
+                    <h1 class="h3">Expense Tracker Dashboard</h1>
+                    <div class="text-muted-small">Manage tenders, expenses and profitability at a glance</div>
+                </div>
+            </div>
 
-    <!-- Action Buttons -->
-    <div class="action-buttons">
-        <a href="{% url 'add_company' %}" class="btn btn-primary btn-custom">
-            <i class="fas fa-building"></i> Add Company
-        </a>
-        <a href="{% url 'add_tender' %}" class="btn btn-success btn-custom">
-            <i class="fas fa-file-contract"></i> Add Tender
-        </a>
-        <a href="{% url 'add_expense' %}" class="btn btn-warning btn-custom">
-            <i class="fas fa-receipt"></i> Add Expense
-        </a>
-        <a href="{% url 'admin:index' %}" class="btn btn-custom btn-admin">
-            <i class="fas fa-cog"></i> Admin Panel
-        </a>
-    </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#searchModal">🔎 Search</button>
+                <a href="/admin/" class="btn admin-btn btn-sm text-white" target="_blank">📊 Admin</a>
+                <a href="{% url 'tracker:company_add' %}" class="btn btn-outline-primary btn-sm">Add Company</a>
+                <a href="{% url 'tracker:tender_add' %}" class="btn btn-outline-primary btn-sm">Add Tender</a>
+                <a href="{% url 'tracker:expense_add' %}" class="btn btn-primary btn-sm text-white">Add Expense</a>
+            </div>
+        </div>
 
-    <!-- Statistics Overview -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="stat-icon primary">
-                    <i class="fas fa-building"></i>
-                </div>
-                <div class="stat-value">{{ companies.count }}</div>
-                <div class="stat-label">Total Companies</div>
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-card">
+                <form id="filterForm" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="companyFilter" class="form-label">Company</label>
+                        <select id="companyFilter" class="form-select">
+                            <option value="">All Companies</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}">{{ company.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="statusFilter" class="form-label">Payment Status</label>
+                        <select id="statusFilter" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Partially Paid">Partially Paid</option>
+                            <option value="Paid">Paid</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="dateFrom" class="form-label">Date From</label>
+                        <input type="date" id="dateFrom" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="dateTo" class="form-label">Date To</label>
+                        <input type="date" id="dateTo" class="form-control">
+                    </div>
+                    <div class="col-md-2 d-flex">
+                        <button type="button" class="btn btn-primary w-100" onclick="fetchTenders()">Apply Filters</button>
+                    </div>
+                </form>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="stats-card success">
-                <div class="stat-icon success">
-                    <i class="fas fa-file-contract"></i>
-                </div>
-                <div class="stat-value">{{ tenders.count }}</div>
-                <div class="stat-label">Active Tenders</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card warning">
-                <div class="stat-icon warning">
-                    <i class="fas fa-dollar-sign"></i>
-                </div>
-                <div class="stat-value">K{{ tenders|sum_attr:'total_value'|default:0|floatformat:0|intcomma }}</div>
-                <div class="stat-label">Total Value</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card danger">
-                <div class="stat-icon danger">
-                    <i class="fas fa-chart-pie"></i>
-                </div>
-                <div class="stat-value">{{ tenders|filter_status:'Pending'|length }}</div>
-                <div class="stat-label">Pending Payments</div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Companies Section -->
-    <div class="section-card">
-        <div class="section-header">
-            <i class="fas fa-building"></i>
-            <h4>Companies</h4>
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-3" id="summaryCards">
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Total Tenders</h6>
+                        <div class="summary-value text-primary" id="totalTenders">0</div>
+                        <div class="summary-sub">All tenders</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Total Value</h6>
+                        <div class="summary-value" id="totalValue">K0.00</div>
+                        <div class="summary-sub">Sum of all tenders</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Total Expenses</h6>
+                        <div class="summary-value text-warning" id="totalExpenses">K0.00</div>
+                        <div class="summary-sub">All expenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Total Profit</h6>
+                        <div class="summary-value" id="totalProfit">K0.00</div>
+                        <div class="summary-sub">Value - Expenses</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% if companies %}
-            <ul class="company-list">
-                {% for c in companies %}
-                    <li class="company-item">
-                        <div class="company-name">{{ c.name }}</div>
-                        <div class="company-details">
-                            {% if c.phone %}
-                                <span><i class="fas fa-phone"></i>{{ c.phone }}</span>
-                            {% endif %}
-                            {% if c.email %}
-                                <span><i class="fas fa-envelope"></i>{{ c.email }}</span>
-                            {% endif %}
-                            {% if c.address %}
-                                <span><i class="fas fa-map-marker-alt"></i>{{ c.address|truncatewords:5 }}</span>
-                            {% endif %}
+
+        <!-- Status Summary -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card p-3" style="border-radius:.6rem;box-shadow:var(--shadow)">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">Payment Status Overview</h5>
+                        <div class="text-muted-small">Quick snapshot of payment progress</div>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-md-4 p-3">
+                            <span class="badge bg-warning status-badge">Pending</span>
+                            <div class="summary-value text-warning" id="pendingCount">0</div>
                         </div>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <div class="empty-state">
-                <i class="fas fa-building"></i>
-                <p>No companies yet. Add your first company to get started!</p>
+                        <div class="col-md-4 p-3">
+                            <span class="badge bg-info status-badge">Partially Paid</span>
+                            <div class="summary-value text-info" id="partialCount">0</div>
+                        </div>
+                        <div class="col-md-4 p-3">
+                            <span class="badge bg-success status-badge">Paid</span>
+                            <div class="summary-value text-success" id="paidCount">0</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        {% endif %}
-    </div>
-
-    <!-- Tenders Section -->
-    <div class="section-card">
-        <div class="section-header">
-            <i class="fas fa-file-contract"></i>
-            <h4>Tenders Overview</h4>
         </div>
-        {% if tenders %}
-            <div class="table-responsive">
-                <table class="table custom-table">
-                    <thead>
-                        <tr>
-                            <th>Tender No.</th>
-                            <th>Company</th>
-                            <th>Client</th>
-                            <th>Total Value</th>
-                            <th>Expenses</th>
-                            <th>Profit</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for t in tenders %}
-                        <tr>
-                            <td><strong>{{ t.tender_no }}</strong></td>
-                            <td>{{ t.company.name }}</td>
-                            <td>{{ t.client_name }}</td>
-                            <td>K{{ t.total_value|floatformat:2|intcomma }}</td>
-                            <td>K{{ t.total_expenses|floatformat:2|intcomma }}</td>
-                            <td class="{% if t.profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
-                                K{{ t.profit|floatformat:2|intcomma }}
-                            </td>
-                            <td>
-                                <span class="badge-custom {% if t.payment_status == 'Paid' %}badge-paid{% elif t.payment_status == 'Partially Paid' %}badge-partial{% else %}badge-pending{% endif %}">
-                                    {{ t.payment_status }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <i class="fas fa-file-contract"></i>
-                <p>No tenders available. Create your first tender to start tracking!</p>
-            </div>
-        {% endif %}
-    </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Charts -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="chart-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">Tenders by Company</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary me-2" onclick="initCharts()">Refresh Chart</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="downloadChartImage()">Download</button>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="height:320px;">
+                        <canvas id="tendersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tenders / Expenses Tabs -->
+        <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tenders-tab" data-bs-toggle="tab" data-bs-target="#tendersTab" type="button" role="tab" aria-controls="tendersTab" aria-selected="true">Tenders</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="expenses-tab" data-bs-toggle="tab" data-bs-target="#expensesTab" type="button" role="tab" aria-controls="expensesTab" aria-selected="false">Expenses</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tendersTab" role="tabpanel" aria-labelledby="tenders-tab">
+                <div class="card" style="border-radius:.6rem;box-shadow:var(--shadow)">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Tenders</h5>
+                        <div>
+                            <span class="badge bg-primary me-2" id="tenderCount">0 tenders</span>
+                            <button class="btn btn-sm btn-outline-success" onclick="fetchTenders()">Refresh Data</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Tender No</th>
+                                        <th>Company</th>
+                                        <th>Client</th>
+                                        <th class="text-end">Total Value</th>
+                                        <th class="text-end">Expenses</th>
+                                        <th class="text-end">Profit</th>
+                                        <th>Status</th>
+                                        <th>Start Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tendersTableBody">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="loadingIndicator" class="text-center py-4" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Loading tenders...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="expensesTab" role="tabpanel" aria-labelledby="expenses-tab">
+                <div class="card" style="border-radius:.6rem;box-shadow:var(--shadow)">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Expenses</h5>
+                        <div>
+                            <span class="badge bg-secondary me-2" id="expenseCount">0 expenses</span>
+                            <a href="{% url 'tracker:expense_add' %}" class="btn btn-sm btn-primary">Add Expense</a>
+                            <a href="{% url 'tracker:expense_list' %}" class="btn btn-outline-primary">
+    View All Expenses
+</a>
+
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Tender</th>
+                                        <th>Category</th>
+                                        <th>Description</th>
+                                        <th class="text-end">Amount</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expensesTableBody">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="expensesLoading" class="text-center py-4" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Loading expenses...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Search Modal (popup search UI) -->
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="searchModalLabel">Quick Search</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+                <input type="text" id="quickSearch" class="form-control" placeholder="Search by tender no, company or client...">
+            </div>
+            <div id="quickSearchResults" style="max-height:220px;overflow:auto"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" onclick="applyQuickSearch()">Search</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSRF Token for AJAX -->
+    {% csrf_token %}
+
+    <script>
+        // Get CSRF token
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+
+        // Format currency in Kwacha
+        function formatCurrency(amount) {
+            const num = Number(amount) || 0;
+            return 'K' + new Intl.NumberFormat('en-ZM', {minimumFractionDigits:2,maximumFractionDigits:2}).format(num);
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            try {
+                return new Date(dateString).toLocaleDateString('en-ZM');
+            } catch(e){return dateString}
+        }
+
+        // Show loading state
+        function setLoading(loading) {
+            const tableBody = document.getElementById('tendersTableBody');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loading) {
+                tableBody.style.display = 'none';
+                loadingIndicator.style.display = 'block';
+            } else {
+                tableBody.style.display = '';
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        // Fetch and display tenders
+        let fetchAbortController = null;
+        async function fetchTenders() {
+            setLoading(true);
+
+            if (fetchAbortController) fetchAbortController.abort();
+            fetchAbortController = new AbortController();
+
+            const params = new URLSearchParams({
+                company: document.getElementById('companyFilter').value,
+                status: document.getElementById('statusFilter').value,
+                date_from: document.getElementById('dateFrom').value,
+                date_to: document.getElementById('dateTo').value
+            });
+
+            try {
+                const response = await fetch(`{% url 'tracker:api_tenders' %}?${params}`, {signal: fetchAbortController.signal});
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                displayTenders(data.tenders);
+                updateSummary(data.tenders);
+                updateStatusCounts(data.tenders);
+            } catch (error) {
+                if (error.name !== 'AbortError'){
+                    console.error('Error fetching tenders:', error);
+                    showToast('Error loading tenders', 'danger');
+                }
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Display tenders in table
+        function displayTenders(tenders) {
+            const tbody = document.getElementById('tendersTableBody');
+            const countBadge = document.getElementById('tenderCount');
+
+            countBadge.textContent = `${tenders.length} tender${tenders.length !== 1 ? 's' : ''}`;
+
+            if (tenders.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4 empty-state">
+                            No tenders found matching your filters.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = tenders.map(tender => `
+                <tr>
+                    <td><strong>${escapeHtml(tender.tender_no)}</strong></td>
+                    <td>${escapeHtml(tender.company)}</td>
+                    <td>${escapeHtml(tender.client_name)}</td>
+                    <td class="text-end">${formatCurrency(tender.total_value)}</td>
+                    <td class="text-end">${formatCurrency(tender.total_expenses)}</td>
+                    <td class="text-end ${tender.profit >= 0 ? 'text-success' : 'text-danger'}">${formatCurrency(tender.profit)}</td>
+                    <td>
+                        <span class="badge ${getStatusBadgeClass(tender.payment_status)}">${tender.payment_status}</span>
+                    </td>
+                    <td>${formatDate(tender.start_date)}</td>
+                    <td class="table-actions text-end">
+                        <div class="btn-group" role="group" aria-label="Actions">
+                            <a href="/tender/${tender.id}/edit/" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Escape HTML helper
+        function escapeHtml(unsafe) {
+            if (unsafe === null || unsafe === undefined) return '';
+            return String(unsafe).replace(/[&<>"'`]/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;","`":"&#96;"})[m]; });
+        }
+
+        // Update summary cards
+        function updateSummary(tenders) {
+            const totalTenders = tenders.length;
+            const totalValue = tenders.reduce((sum, t) => sum + (Number(t.total_value) || 0), 0);
+            const totalExpenses = tenders.reduce((sum, t) => sum + (Number(t.total_expenses) || 0), 0);
+            const totalProfit = totalValue - totalExpenses;
+
+            document.getElementById('totalTenders').textContent = totalTenders;
+            document.getElementById('totalValue').textContent = formatCurrency(totalValue);
+            document.getElementById('totalExpenses').textContent = formatCurrency(totalExpenses);
+            document.getElementById('totalProfit').textContent = formatCurrency(totalProfit);
+
+            const profitElement = document.getElementById('totalProfit');
+            profitElement.className = `summary-value ${totalProfit >= 0 ? 'text-success' : 'text-danger'}`;
+        }
+
+        // Update status counts
+        function updateStatusCounts(tenders) {
+            const pendingCount = tenders.filter(t => t.payment_status === 'Pending').length;
+            const partialCount = tenders.filter(t => t.payment_status === 'Partially Paid').length;
+            const paidCount = tenders.filter(t => t.payment_status === 'Paid').length;
+
+            document.getElementById('pendingCount').textContent = pendingCount;
+            document.getElementById('partialCount').textContent = partialCount;
+            document.getElementById('paidCount').textContent = paidCount;
+        }
+
+        // Get badge class for status
+        function getStatusBadgeClass(status) {
+            const classes = {
+                'Pending': 'bg-warning',
+                'Partially Paid': 'bg-info',
+                'Paid': 'bg-success'
+            };
+            return classes[status] || 'bg-secondary';
+        }
+
+        // Toast helper
+        function showToast(message, type='info'){
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = `\n                <div class="toast align-items-center text-bg-${type} border-0 show" role="alert" aria-live="assertive" aria-atomic="true" style="position:fixed;right:20px;bottom:20px;z-index:1080;">
+                    <div class="d-flex">
+                        <div class="toast-body">${escapeHtml(message)}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>`;
+            document.body.appendChild(wrapper);
+            setTimeout(()=> wrapper.remove(), 3500);
+        }
+
+        // Charts
+        let tendersChart = null;
+
+        async function initCharts() {
+            try {
+                const response = await fetch('{% url "tracker:api_tenders_by_company" %}');
+                const data = await response.json();
+
+                const ctx = document.getElementById('tendersChart').getContext('2d');
+
+                if (tendersChart) tendersChart.destroy();
+
+                tendersChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [
+                            { label: 'Total Value (K)', data: data.values, backgroundColor: 'rgba(13,110,253,0.75)' },
+                            { label: 'Profit (K)', data: data.profits, backgroundColor: 'rgba(111,66,193,0.7)' }
+                        ]
+                    },
+                    options: {
+                        responsive:true,maintainAspectRatio:false,
+                        scales: { y: { beginAtZero:true, ticks:{ callback: v => 'K' + Number(v).toLocaleString('en-ZM',{minimumFractionDigits:2,maximumFractionDigits:2}) } } },
+                        plugins: { tooltip: { callbacks: { label: function(ctx){ return `${ctx.dataset.label}: K${Number(ctx.raw).toLocaleString('en-ZM',{minimumFractionDigits:2,maximumFractionDigits:2})}` } } } }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading chart:', error);
+                document.getElementById('tendersChart').parentElement.innerHTML = `\n                    <div class="text-center text-muted py-5">\n                        <p>Error loading chart data</p>\n                        <button class="btn btn-sm btn-outline-primary" onclick="initCharts()">Retry</button>\n                    </div>`;
+            }
+        }
+
+        function downloadChartImage(){
+            if (!tendersChart) return showToast('Chart not ready', 'warning');
+            const link = document.createElement('a');
+            link.href = tendersChart.toBase64Image();
+            link.download = 'tenders-chart.png';
+            link.click();
+        }
+
+        // Quick search
+        function applyQuickSearch(){
+            const q = document.getElementById('quickSearch').value.trim();
+            if (!q) return showToast('Enter a search term', 'warning');
+            // apply search filters and fetch
+            document.getElementById('companyFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+
+            // use query param 'q' recognized by backend
+            const params = new URLSearchParams({q});
+            setLoading(true);
+            fetch(`{% url 'tracker:api_tenders' %}?${params}`)
+              .then(r => r.json())
+              .then(data => { displayTenders(data.tenders); updateSummary(data.tenders); updateStatusCounts(data.tenders); })
+              .catch(err => {console.error(err); showToast('Search failed','danger')})
+              .finally(()=>{ setLoading(false); var modal = bootstrap.Modal.getInstance(document.getElementById('searchModal')); if (modal) modal.hide(); });
+        }
+
+        // Expenses functions
+        async function fetchExpenses() {
+            const loading = document.getElementById('expensesLoading');
+            const tbody = document.getElementById('expensesTableBody');
+            const countBadge = document.getElementById('expenseCount');
+            loading.style.display = 'block';
+            tbody.style.display = 'none';
+            try {
+                const response = await fetch('{% url "tracker:api_expenses" %}');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                displayExpenses(data.expenses || data);
+            } catch (err) {
+                console.error('Error loading expenses', err);
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Error loading expenses</td></tr>`;
+            } finally {
+                loading.style.display = 'none';
+                tbody.style.display = '';
+            }
+        }
+
+        function displayExpenses(expenses) {
+            const tbody = document.getElementById('expensesTableBody');
+            const countBadge = document.getElementById('expenseCount');
+            countBadge.textContent = `${expenses.length} expense${expenses.length !== 1 ? 's' : ''}`;
+            if (!expenses.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">No expenses found.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = expenses.map(e => `
+                <tr>
+                    <td>${escapeHtml(e.tender || e.tender_display || e.tender_no || '')}</td>
+                    <td>${escapeHtml(e.category)}</td>
+                    <td>${escapeHtml(e.description || '')}</td>
+                    <td class="text-end">${formatCurrency(e.amount)}</td>
+                    <td>${formatDate(e.date)}</td>
+                    <td class="text-end">
+                        <a href="/expense/${e.id}/edit/" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchTenders();
+            initCharts();
+
+            // Load expenses when expenses tab is activated
+            var expensesTabEl = document.getElementById('expenses-tab');
+            if (expensesTabEl) {
+                expensesTabEl.addEventListener('shown.bs.tab', function (event) {
+                    // fetch expenses only when expenses tab is shown
+                    fetchExpenses();
+                });
+            }
+
+            // Add enter key support for filters
+            const filterInputs = document.querySelectorAll('#filterForm input, #filterForm select');
+            filterInputs.forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        fetchTenders();
+                    }
+                });
+            });
+
+            // Set default dates for better UX
+            const today = new Date();
+            const oneMonthAgo = new Date();
+            oneMonthAgo.setMonth(today.getMonth() - 1);
+            document.getElementById('dateFrom').valueAsDate = oneMonthAgo;
+            document.getElementById('dateTo').valueAsDate = today;
+
+            // Tooltip
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el) });
+        });
+
+        // Export functions to global scope for onclick handlers
+        window.fetchTenders = fetchTenders;
+        window.initCharts = initCharts;
+        window.applyQuickSearch = applyQuickSearch;
+        window.fetchExpenses = fetchExpenses;
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
