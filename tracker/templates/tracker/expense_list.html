@@ -1,4 +1,5 @@
 {% load static %}
+{% load humanize %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,8 +8,88 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
+        /* Layout */
+        :root {
+            --accent: #0d6efd;
+            --muted: #6c757d;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --rounded: 12px;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            color: #212529;
+        }
+
         .container { max-width: 1100px; }
+
+        /* Topbar */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            margin-bottom: 18px;
+            background: linear-gradient(90deg, rgba(13,110,253,0.06), rgba(13,110,253,0.02));
+            border-radius: var(--rounded);
+            box-shadow: 0 6px 18px rgba(13,110,253,0.04);
+            border: 1px solid rgba(13,110,253,0.06);
+        }
+
+        .brand {
+            display:flex;
+            gap:12px;
+            align-items:center;
+        }
+
+        .brand .logo {
+            display:inline-grid;
+            place-items:center;
+            width:48px;
+            height:48px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: 0 4px 10px rgba(13,110,253,0.16);
+            transition: transform .12s ease;
+        }
+
+        .brand .logo:hover { transform: translateY(-2px); }
+
+        .brand h1 {
+            margin:0;
+            font-size: 1.05rem;
+            line-height: 1;
+        }
+
+        .text-muted-small {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-top: 2px;
+        }
+
+        /* Buttons area */
+        .topbar .btn {
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+        }
+
+        .admin-btn {
+            background: linear-gradient(180deg,#0b5ed7,#0a58ca);
+            border: none;
+            box-shadow: 0 6px 14px rgba(10,88,202,0.12);
+        }
+
+        /* table visuals */
         .table td, .table th { vertical-align: middle; }
+        .table thead.table-dark th { background: #2b2f36; border-color: #23262b; color: #fff; }
 
         /* Print styles */
         @media print {
@@ -19,25 +100,52 @@
             /* remove borders/shadows that look bad on PDF */
             .no-print { display: none !important; }
         }
+
+        /* Responsiveness */
+        @media (max-width: 720px) {
+            .topbar { flex-direction: column; align-items: stretch; gap: 10px; padding: 10px; }
+            .brand { gap: 10px; }
+            .brand h1 { font-size: 1rem; }
+            .topbar .d-flex.align-items-center { justify-content: flex-end; gap: 6px; flex-wrap:wrap; }
+            .container { padding: 12px; }
+            .table { font-size: 0.92rem; }
+        }
     </style>
 </head>
 
 <body>
 <div class="container mt-4">
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="brand">
+            <a href="#" onclick="location.reload();return false;" class="logo" title="Reload page" aria-label="Reload page">ET</a>
+            <div>
+                <h1 class="h3">Expense Tracker Dashboard</h1>
+                <div class="text-muted-small">Manage tenders, expenses and profitability at a glance</div>
+            </div>
+        </div>
 
-    <div class="d-flex justify-content-between align-items-start mb-3 no-print">
-    <div>
-        <h2>{{ title }}</h2>
-        <div class="text-muted">
-            Showing
-            {% if expenses.paginator %}
-                {{ expenses.paginator.count }}
-            {% else %}
-                {{ expenses|length }}
-            {% endif %}
-             expense(s)
+        <div class="d-flex align-items-center gap-2">
+            <a href="/admin/" class="btn admin-btn btn-sm text-white" target="_blank" aria-label="Open admin">📊 Admin</a>
+            <a href="{% url 'tracker:company_add' %}" class="btn btn-outline-primary btn-sm">Add Company</a>
+            <a href="{% url 'tracker:tender_add' %}" class="btn btn-outline-primary btn-sm">Add Tender</a>
+            <a href="{% url 'tracker:expense_add' %}" class="btn btn-primary btn-sm text-white">Add Expense</a>
         </div>
     </div>
+
+    <div class="d-flex justify-content-between align-items-start mb-3 no-print">
+        <div>
+            <h2>{{ title }}</h2>
+            <div class="text-muted">
+                Showing
+                {% if expenses.paginator %}
+                    {{ expenses.paginator.count }}
+                {% else %}
+                    {{ expenses|length }}
+                {% endif %}
+                expense(s)
+            </div>
+        </div>
 
         <div class="btn-group">
             <a href="{% url 'tracker:expense_add' %}" class="btn btn-primary">+ Add Expense</a>
@@ -52,8 +160,7 @@
             <select id="company" name="company" class="form-select">
                 <option value="">-- All companies --</option>
                 {% for c in companies %}
-                    <option value="{{ c.id }}"
-                        {% if selected_company and selected_company == c.id %}selected{% endif %}>
+                    <option value="{{ c.id }}" {% if selected_company and selected_company == c.id %}selected{% endif %}>
                         {{ c.name }}
                     </option>
                 {% endfor %}
@@ -65,9 +172,7 @@
             <select id="tender" name="tender" class="form-select">
                 <option value="">-- All tenders --</option>
                 {% for t in tenders %}
-                    <option value="{{ t.id }}"
-                        data-company="{{ t.company.id }}"
-                        {% if selected_tender and selected_tender == t.id %}selected{% endif %}>
+                    <option value="{{ t.id }}" data-company="{{ t.company.id }}" {% if selected_tender and selected_tender == t.id %}selected{% endif %}>
                         {{ t.tender_no }} — {{ t.company.name }}
                     </option>
                 {% endfor %}
@@ -84,12 +189,11 @@
 
     <!-- Printable area -->
     <div id="print-area">
-<div class="mb-2">
-    <strong>Filter summary:</strong>
-    {% if selected_company_name %} Company: {{ selected_company_name }} {% endif %}
-    {% if selected_tender_name %} | Tender: {{ selected_tender_name }} {% endif %}
-</div>
-
+        <div class="mb-2">
+            <strong>Filter summary:</strong>
+            {% if selected_company_name %} Company: {{ selected_company_name }} {% endif %}
+            {% if selected_tender_name %} | Tender: {{ selected_tender_name }} {% endif %}
+        </div>
 
         <table class="table table-bordered table-striped">
             <thead class="table-dark">
@@ -116,14 +220,11 @@
                     </td>
                     <td>{{ e.category }}</td>
                     <td>{{ e.description|default:"-" }}</td>
-                    <td style="text-align:right">{{ e.amount }}</td>
+                    <td style="text-align:right">ZMW {{ e.amount|default:0|floatformat:2|intcomma }}</td>
                     <td class="no-print">
                         <a href="{{ e.get_absolute_url }}" class="btn btn-sm btn-warning">Edit</a>
 
-                        <form action="{% url 'tracker:expense_delete' e.id %}" method="post" style="display:inline-block;">
-                            {% csrf_token %}
-                            <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this expense?');">Delete</button>
-                        </form>
+                        
                     </td>
                 </tr>
                 {% empty %}
@@ -135,7 +236,7 @@
             <tfoot>
                 <tr>
                     <th colspan="4" class="text-end">TOTAL</th>
-                    <th style="text-align:right">{{ total_amount }}</th>
+                    <th style="text-align:right">ZMW {{ total_amount|default:0|floatformat:2|intcomma }}</th>
                     <th class="no-print"></th>
                 </tr>
             </tfoot>
