@@ -1,5 +1,4 @@
-{% load static %}
-{% load tracker_filters %}
+{% load static %} {% load tracker_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -80,17 +79,20 @@
                 <a href="#" onclick="location.reload();return false;" class="logo" title="Reload page">ET</a>
                 <div>
                     <h1 class="h3">Expense Tracker Dashboard</h1>
-                    <div class="text-muted-small">Manage tenders, expenses and profitability at a glance</div>
+                    <div class="text-muted-small">Manage tenders, expenses, payments and profitability at a glance</div>
                 </div>
             </div>
 
             <div class="d-flex align-items-center gap-2">
-                <a href="/admin/" class="btn admin-btn btn-sm text-white" target="_blank">📊 Admin</a>
+                <a href="/admin/" class="btn admin-btn btn-sm text-white" target="_blank">Admin</a>
                 <a href="{% url 'tracker:company_add' %}" class="btn btn-outline-primary btn-sm">Add Company</a>
                 <a href="{% url 'tracker:tender_add' %}" class="btn btn-outline-primary btn-sm">Add Tender</a>
                 <a href="{% url 'tracker:expense_add' %}" class="btn btn-primary btn-sm text-white">Add Expense</a>
             </div>
         </div>
+<a href="{% url 'projections:dashboardpro' %}" class="btn btn-outline-primary">
+    Project Projections
+</a>
 
         <!-- Filter Section -->
         <div class="filter-section">
@@ -145,16 +147,16 @@
                     <div class="card-body text-center">
                         <h6 class="card-title">Total Value</h6>
                         <div class="summary-value" id="totalValue">K0.00</div>
-                        <div class="summary-sub">Sum of all tenders</div>
+                        <div class="summary-sub">Sum of tender values</div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="summary-card">
                     <div class="card-body text-center">
-                        <h6 class="card-title">Total Expenses</h6>
-                        <div class="summary-value text-warning" id="totalExpenses">K0.00</div>
-                        <div class="summary-sub">All expenses</div>
+                        <h6 class="card-title">Total Paid</h6>
+                        <div class="summary-value text-success" id="totalPaid">K0.00</div>
+                        <div class="summary-sub">All client payments</div>
                     </div>
                 </div>
             </div>
@@ -224,9 +226,10 @@
                                         <th>Company</th>
                                         <th>Client</th>
                                         <th class="text-end">Total Value</th>
+                                        <th class="text-end">Paid</th>
+                                        <th class="text-end">Balance</th>
                                         <th class="text-end">Expenses</th>
                                         <th class="text-end">Profit</th>
-                                        <th>Status</th>
                                         <th>Start Date</th>
                                         <th>Actions</th>
                                     </tr>
@@ -284,6 +287,7 @@
                 </div>
             </div>
         </div>
+
         <!-- Charts -->
         <div class="row mb-4">
             <div class="col-md-12">
@@ -295,348 +299,376 @@
                             <button class="btn btn-sm btn-outline-primary" onclick="downloadChartImage()">Download</button>
                         </div>
                     </div>
-                    <div class="chart-container" style="height:320px;">
+                    <div class="chart-container" style="height:360px;">
                         <canvas id="tendersChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-
-
-    <!-- Search Modal (popup search UI) -->
-    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="searchModalLabel">Quick Search</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-                <input type="text" id="quickSearch" class="form-control" placeholder="Search by tender no, company or client...">
+        <!-- Search Modal (popup search UI) -->
+        <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="searchModalLabel">Quick Search</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="quickSearch" class="form-control" placeholder="Search by tender no, company or client...">
+                </div>
+                <div id="quickSearchResults" style="max-height:220px;overflow:auto"></div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="applyQuickSearch()">Search</button>
+              </div>
             </div>
-            <div id="quickSearchResults" style="max-height:220px;overflow:auto"></div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary" onclick="applyQuickSearch()">Search</button>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- CSRF Token for AJAX -->
-    {% csrf_token %}
+        <!-- CSRF Token for AJAX -->
+        {% csrf_token %}
 
-    <script>
-        // Get CSRF token
-        function getCSRFToken() {
-            return document.querySelector('[name=csrfmiddlewaretoken]').value;
-        }
-
-        // Format currency in Kwacha
-        function formatCurrency(amount) {
-            const num = Number(amount) || 0;
-            return 'K' + new Intl.NumberFormat('en-ZM', {minimumFractionDigits:2,maximumFractionDigits:2}).format(num);
-        }
-
-        // Format date
-        function formatDate(dateString) {
-            if (!dateString) return '-';
-            try {
-                return new Date(dateString).toLocaleDateString('en-ZM');
-            } catch(e){return dateString}
-        }
-
-        // Show loading state
-        function setLoading(loading) {
-            const tableBody = document.getElementById('tendersTableBody');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            if (loading) {
-                tableBody.style.display = 'none';
-                loadingIndicator.style.display = 'block';
-            } else {
-                tableBody.style.display = '';
-                loadingIndicator.style.display = 'none';
+        <script>
+            // Get CSRF token
+            function getCSRFToken() {
+                return document.querySelector('[name=csrfmiddlewaretoken]').value;
             }
-        }
 
-        // Fetch and display tenders
-        let fetchAbortController = null;
-        async function fetchTenders() {
-            setLoading(true);
+            // Format currency in Kwacha
+            function formatCurrency(amount) {
+                const num = Number(amount) || 0;
+                return 'K' + new Intl.NumberFormat('en-ZM', {minimumFractionDigits:2,maximumFractionDigits:2}).format(num);
+            }
 
-            if (fetchAbortController) fetchAbortController.abort();
-            fetchAbortController = new AbortController();
+            // Format date
+            function formatDate(dateString) {
+                if (!dateString) return '-';
+                try {
+                    return new Date(dateString).toLocaleDateString('en-ZM');
+                } catch(e){return dateString}
+            }
 
-            const params = new URLSearchParams({
-                company: document.getElementById('companyFilter').value,
-                status: document.getElementById('statusFilter').value,
-                date_from: document.getElementById('dateFrom').value,
-                date_to: document.getElementById('dateTo').value
-            });
-
-            try {
-                const response = await fetch(`{% url 'tracker:api_tenders' %}?${params}`, {signal: fetchAbortController.signal});
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                displayTenders(data.tenders);
-                updateSummary(data.tenders);
-                updateStatusCounts(data.tenders);
-            } catch (error) {
-                if (error.name !== 'AbortError'){
-                    console.error('Error fetching tenders:', error);
-                    showToast('Error loading tenders', 'danger');
+            // Show loading state
+            function setLoading(loading) {
+                const tableBody = document.getElementById('tendersTableBody');
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                if (loading) {
+                    tableBody.style.display = 'none';
+                    loadingIndicator.style.display = 'block';
+                } else {
+                    tableBody.style.display = '';
+                    loadingIndicator.style.display = 'none';
                 }
-            } finally {
-                setLoading(false);
             }
-        }
 
-        // Display tenders in table
-        function displayTenders(tenders) {
-            const tbody = document.getElementById('tendersTableBody');
-            const countBadge = document.getElementById('tenderCount');
+            // Fetch and display tenders
+            let fetchAbortController = null;
+            async function fetchTenders() {
+                setLoading(true);
 
-            countBadge.textContent = `${tenders.length} tender${tenders.length !== 1 ? 's' : ''}`;
+                if (fetchAbortController) fetchAbortController.abort();
+                fetchAbortController = new AbortController();
 
-            if (tenders.length === 0) {
-                tbody.innerHTML = `
+                const params = new URLSearchParams({
+                    company: document.getElementById('companyFilter').value,
+                    status: document.getElementById('statusFilter').value,
+                    date_from: document.getElementById('dateFrom').value,
+                    date_to: document.getElementById('dateTo').value
+                });
+
+                try {
+                    const response = await fetch(`{% url 'tracker:api_tenders' %}?${params}`, {signal: fetchAbortController.signal});
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const data = await response.json();
+                    displayTenders(data.tenders);
+                    updateSummary(data.tenders);
+                    updateStatusCounts(data.tenders);
+                } catch (error) {
+                    if (error.name !== 'AbortError'){
+                        console.error('Error fetching tenders:', error);
+                        showToast('Error loading tenders', 'danger');
+                    }
+                } finally {
+                    setLoading(false);
+                }
+            }
+
+            // Display tenders in table
+            function displayTenders(tenders) {
+                const tbody = document.getElementById('tendersTableBody');
+                const countBadge = document.getElementById('tenderCount');
+
+                countBadge.textContent = `${tenders.length} tender${tenders.length !== 1 ? 's' : ''}`;
+
+                if (tenders.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4 empty-state">
+                                No tenders found matching your filters.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = tenders.map(tender => {
+                    const overrunHtml = tender.expense_overrun && tender.expense_overrun > 0
+                        ? `<div class="small text-danger">Loss: ${formatCurrency(tender.expense_overrun)}</div>`
+                        : '';
+
+                    return `
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4 empty-state">
-                            No tenders found matching your filters.
+                        <td><strong>${escapeHtml(tender.tender_no)}</strong></td>
+                        <td>${escapeHtml(tender.company)}</td>
+                        <td>${escapeHtml(tender.client_name)}</td>
+                        <td class="text-end">${formatCurrency(tender.total_value)}</td>
+                        <td class="text-end">${formatCurrency(tender.total_paid)}</td>
+                        <td class="text-end">${formatCurrency(tender.balance)}</td>
+                        <td class="text-end">${formatCurrency(tender.total_expenses)} ${overrunHtml}</td>
+                        <td class="text-end ${tender.profit >= 0 ? 'text-success' : 'text-danger'}">${formatCurrency(tender.profit)}</td>
+                        <td>${formatDate(tender.start_date)}</td>
+                        <td class="table-actions text-end">
+                            <div class="btn-group" role="group" aria-label="Actions">
+                                <a href="/tender/${tender.id}/edit/" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
+                            </div>
                         </td>
                     </tr>
-                `;
-                return;
+                    `;
+                }).join('');
             }
 
-            tbody.innerHTML = tenders.map(tender => `
-                <tr>
-                    <td><strong>${escapeHtml(tender.tender_no)}</strong></td>
-                    <td>${escapeHtml(tender.company)}</td>
-                    <td>${escapeHtml(tender.client_name)}</td>
-                    <td class="text-end">${formatCurrency(tender.total_value)}</td>
-                    <td class="text-end">${formatCurrency(tender.total_expenses)}</td>
-                    <td class="text-end ${tender.profit >= 0 ? 'text-success' : 'text-danger'}">${formatCurrency(tender.profit)}</td>
-                    <td>
-                        <span class="badge ${getStatusBadgeClass(tender.payment_status)}">${tender.payment_status}</span>
-                    </td>
-                    <td>${formatDate(tender.start_date)}</td>
-                    <td class="table-actions text-end">
-                        <div class="btn-group" role="group" aria-label="Actions">
-                            <a href="/tender/${tender.id}/edit/" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
+            // Escape HTML helper
+            function escapeHtml(unsafe) {
+                if (unsafe === null || unsafe === undefined) return '';
+                return String(unsafe).replace(/[&<>\"'`]/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;","`":"&#96;"})[m]; });
+            }
+
+            // Update summary cards
+            function updateSummary(tenders) {
+                const totalTenders = tenders.length;
+                const totalValue = tenders.reduce((sum, t) => sum + (Number(t.total_value) || 0), 0);
+                const totalPaid = tenders.reduce((sum, t) => sum + (Number(t.total_paid) || 0), 0);
+                const totalExpenses = tenders.reduce((sum, t) => sum + (Number(t.total_expenses) || 0), 0);
+                const totalProfit = totalValue - totalExpenses;
+
+                document.getElementById('totalTenders').textContent = totalTenders;
+                document.getElementById('totalValue').textContent = formatCurrency(totalValue);
+                document.getElementById('totalPaid').textContent = formatCurrency(totalPaid);
+                document.getElementById('totalProfit').textContent = formatCurrency(totalProfit);
+
+                const profitElement = document.getElementById('totalProfit');
+                profitElement.className = `summary-value ${totalProfit >= 0 ? 'text-success' : 'text-danger'}`;
+            }
+
+            // Update status counts
+            function updateStatusCounts(tenders) {
+                const pendingCount = tenders.filter(t => t.payment_status === 'Pending').length;
+                const partialCount = tenders.filter(t => t.payment_status === 'Partially Paid').length;
+                const paidCount = tenders.filter(t => t.payment_status === 'Paid').length;
+
+                document.getElementById('pendingCount').textContent = pendingCount;
+                document.getElementById('partialCount').textContent = partialCount;
+                document.getElementById('paidCount').textContent = paidCount;
+            }
+
+            // Toast helper
+            function showToast(message, type='info'){
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = `
+                   <div class="toast align-items-center text-bg-${type} border-0 show" role="alert" aria-live="assertive" aria-atomic="true" style="position:fixed;right:20px;bottom:20px;z-index:1080;">
+                        <div class="d-flex">
+                            <div class="toast-body">${escapeHtml(message)}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                         </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
+                    </div>`;
+                document.body.appendChild(wrapper);
+                setTimeout(()=> wrapper.remove(), 3500);
+            }
 
-        // Escape HTML helper
-        function escapeHtml(unsafe) {
-            if (unsafe === null || unsafe === undefined) return '';
-            return String(unsafe).replace(/[&<>"'`]/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;","`":"&#96;"})[m]; });
-        }
+            // Charts
+            let tendersChart = null;
 
-        // Update summary cards
-        function updateSummary(tenders) {
-            const totalTenders = tenders.length;
-            const totalValue = tenders.reduce((sum, t) => sum + (Number(t.total_value) || 0), 0);
-            const totalExpenses = tenders.reduce((sum, t) => sum + (Number(t.total_expenses) || 0), 0);
-            const totalProfit = totalValue - totalExpenses;
+            async function initCharts() {
+                try {
+                    const response = await fetch('{% url "tracker:api_tenders_by_company" %}');
+                    const data = await response.json();
 
-            document.getElementById('totalTenders').textContent = totalTenders;
-            document.getElementById('totalValue').textContent = formatCurrency(totalValue);
-            document.getElementById('totalExpenses').textContent = formatCurrency(totalExpenses);
-            document.getElementById('totalProfit').textContent = formatCurrency(totalProfit);
+                    const ctx = document.getElementById('tendersChart').getContext('2d');
 
-            const profitElement = document.getElementById('totalProfit');
-            profitElement.className = `summary-value ${totalProfit >= 0 ? 'text-success' : 'text-danger'}`;
-        }
+                    if (tendersChart) tendersChart.destroy();
 
-        // Update status counts
-        function updateStatusCounts(tenders) {
-            const pendingCount = tenders.filter(t => t.payment_status === 'Pending').length;
-            const partialCount = tenders.filter(t => t.payment_status === 'Partially Paid').length;
-            const paidCount = tenders.filter(t => t.payment_status === 'Paid').length;
+                    // compute balances per company for stacked bar
+                    const balances = data.values.map((v,i) => (Number(v || 0) - Number(data.paids[i] || 0)));
 
-            document.getElementById('pendingCount').textContent = pendingCount;
-            document.getElementById('partialCount').textContent = partialCount;
-            document.getElementById('paidCount').textContent = paidCount;
-        }
+                    tendersChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.labels,
+                            datasets: [
+                                {
+                                    label: 'Paid (K)',
+                                    data: data.paids,
+                                    stack: 'stack1',
+                                    backgroundColor: 'rgba(13,110,253,0.75)'
+                                },
+                                {
+                                    label: 'Balance (K)',
+                                    data: balances,
+                                    stack: 'stack1',
+                                    backgroundColor: 'rgba(111,66,193,0.6)'
+                                },
+                                {
+                                    type: 'line',
+                                    label: 'Expenses (K)',
+                                    data: data.expenses,
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.2,
+                                },
+                                {
+                                    type: 'line',
+                                    label: 'Profit (K)',
+                                    data: data.profits,
+                                    borderDash: [6,4],
+                                    borderWidth: 2,
+                                    tension: 0.2,
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive:true,maintainAspectRatio:false,
+                            scales: { y: { beginAtZero:true, ticks:{ callback: v => 'K' + Number(v).toLocaleString('en-ZM',{minimumFractionDigits:2,maximumFractionDigits:2}) } } },
+                            plugins: { tooltip: { callbacks: { label: function(ctx){ return `${ctx.dataset.label}: K${Number(ctx.raw).toLocaleString('en-ZM',{minimumFractionDigits:2,maximumFractionDigits:2})}` } } } }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error loading chart:', error);
+                    document.getElementById('tendersChart').parentElement.innerHTML = `
+                        <div class="text-center text-muted py-5">
+                            <p>Error loading chart data</p>
+                            <button class="btn btn-sm btn-outline-primary" onclick="initCharts()">Retry</button>
+                        </div>`;
+                }
+            }
 
-        // Get badge class for status
-        function getStatusBadgeClass(status) {
-            const classes = {
-                'Pending': 'bg-warning',
-                'Partially Paid': 'bg-info',
-                'Paid': 'bg-success'
-            };
-            return classes[status] || 'bg-secondary';
-        }
+            function downloadChartImage(){
+                if (!tendersChart) return showToast('Chart not ready', 'warning');
+                const link = document.createElement('a');
+                link.href = tendersChart.toBase64Image();
+                link.download = 'tenders-chart.png';
+                link.click();
+            }
 
-        // Toast helper
-        function showToast(message, type='info'){
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = `\n                <div class="toast align-items-center text-bg-${type} border-0 show" role="alert" aria-live="assertive" aria-atomic="true" style="position:fixed;right:20px;bottom:20px;z-index:1080;">
-                    <div class="d-flex">
-                        <div class="toast-body">${escapeHtml(message)}</div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                </div>`;
-            document.body.appendChild(wrapper);
-            setTimeout(()=> wrapper.remove(), 3500);
-        }
+            // Quick search
+            function applyQuickSearch(){
+                const q = document.getElementById('quickSearch').value.trim();
+                if (!q) return showToast('Enter a search term', 'warning');
+                // apply search filters and fetch
+                document.getElementById('companyFilter').value = '';
+                document.getElementById('statusFilter').value = '';
+                document.getElementById('dateFrom').value = '';
+                document.getElementById('dateTo').value = '';
 
-        // Charts
-        let tendersChart = null;
+                const params = new URLSearchParams({q});
+                setLoading(true);
+                fetch(`{% url 'tracker:api_tenders' %}?${params}`)
+                  .then(r => r.json())
+                  .then(data => { displayTenders(data.tenders); updateSummary(data.tenders); updateStatusCounts(data.tenders); })
+                  .catch(err => {console.error(err); showToast('Search failed','danger')})
+                  .finally(()=>{ setLoading(false); var modal = bootstrap.Modal.getInstance(document.getElementById('searchModal')); if (modal) modal.hide(); });
+            }
 
-        async function initCharts() {
-            try {
-                const response = await fetch('{% url "tracker:api_tenders_by_company" %}');
-                const data = await response.json();
+            // Expenses functions
+            async function fetchExpenses() {
+                const loading = document.getElementById('expensesLoading');
+                const tbody = document.getElementById('expensesTableBody');
+                const countBadge = document.getElementById('expenseCount');
+                loading.style.display = 'block';
+                tbody.style.display = 'none';
+                try {
+                    const response = await fetch('{% url "tracker:api_expenses" %}');
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const data = await response.json();
+                    displayExpenses(data.expenses || data);
+                } catch (err) {
+                    console.error('Error loading expenses', err);
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Error loading expenses</td></tr>`;
+                } finally {
+                    loading.style.display = 'none';
+                    tbody.style.display = '';
+                }
+            }
 
-                const ctx = document.getElementById('tendersChart').getContext('2d');
+            function displayExpenses(expenses) {
+                const tbody = document.getElementById('expensesTableBody');
+                const countBadge = document.getElementById('expenseCount');
+                countBadge.textContent = `${expenses.length} expense${expenses.length !== 1 ? 's' : ''}`;
+                if (!expenses.length) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">No expenses found.</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = expenses.map(e => `
+                    <tr>
+                        <td>${escapeHtml(e.tender || e.tender_display || e.tender_no || '')}</td>
+                        <td>${escapeHtml(e.category)}</td>
+                        <td>${escapeHtml(e.description || '')}</td>
+                        <td class="text-end">${formatCurrency(e.amount)}</td>
+                        <td>${formatDate(e.date)}</td>
+                        <td class="text-end">
+                            <a href="/expense/${e.id}/edit/" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
+                        </td>
+                    </tr>
+                `).join('');
+            }
 
-                if (tendersChart) tendersChart.destroy();
+            // Initialize dashboard
+            document.addEventListener('DOMContentLoaded', function() {
+                fetchTenders();
+                initCharts();
 
-                tendersChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: data.labels,
-                        datasets: [
-                            { label: 'Total Value (K)', data: data.values, backgroundColor: 'rgba(13,110,253,0.75)' },
-                            { label: 'Profit (K)', data: data.profits, backgroundColor: 'rgba(111,66,193,0.7)' }
-                        ]
-                    },
-                    options: {
-                        responsive:true,maintainAspectRatio:false,
-                        scales: { y: { beginAtZero:true, ticks:{ callback: v => 'K' + Number(v).toLocaleString('en-ZM',{minimumFractionDigits:2,maximumFractionDigits:2}) } } },
-                        plugins: { tooltip: { callbacks: { label: function(ctx){ return `${ctx.dataset.label}: K${Number(ctx.raw).toLocaleString('en-ZM',{minimumFractionDigits:2,maximumFractionDigits:2})}` } } } }
-                    }
+                // Load expenses when expenses tab is activated
+                var expensesTabEl = document.getElementById('expenses-tab');
+                if (expensesTabEl) {
+                    expensesTabEl.addEventListener('shown.bs.tab', function (event) {
+                        // fetch expenses only when expenses tab is shown
+                        fetchExpenses();
+                    });
+                }
+
+                // Add enter key support for filters
+                const filterInputs = document.querySelectorAll('#filterForm input, #filterForm select');
+                filterInputs.forEach(input => {
+                    input.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            fetchTenders();
+                        }
+                    });
                 });
-            } catch (error) {
-                console.error('Error loading chart:', error);
-                document.getElementById('tendersChart').parentElement.innerHTML = `\n                    <div class="text-center text-muted py-5">\n                        <p>Error loading chart data</p>\n                        <button class="btn btn-sm btn-outline-primary" onclick="initCharts()">Retry</button>\n                    </div>`;
-            }
-        }
 
-        function downloadChartImage(){
-            if (!tendersChart) return showToast('Chart not ready', 'warning');
-            const link = document.createElement('a');
-            link.href = tendersChart.toBase64Image();
-            link.download = 'tenders-chart.png';
-            link.click();
-        }
+                // Set default dates for better UX
+                const today = new Date();
+                const oneMonthAgo = new Date();
+                oneMonthAgo.setMonth(today.getMonth() - 1);
+                document.getElementById('dateFrom').valueAsDate = oneMonthAgo;
+                document.getElementById('dateTo').valueAsDate = today;
 
-        // Quick search
-        function applyQuickSearch(){
-            const q = document.getElementById('quickSearch').value.trim();
-            if (!q) return showToast('Enter a search term', 'warning');
-            // apply search filters and fetch
-            document.getElementById('companyFilter').value = '';
-            document.getElementById('statusFilter').value = '';
-            document.getElementById('dateFrom').value = '';
-            document.getElementById('dateTo').value = '';
-
-            // use query param 'q' recognized by backend
-            const params = new URLSearchParams({q});
-            setLoading(true);
-            fetch(`{% url 'tracker:api_tenders' %}?${params}`)
-              .then(r => r.json())
-              .then(data => { displayTenders(data.tenders); updateSummary(data.tenders); updateStatusCounts(data.tenders); })
-              .catch(err => {console.error(err); showToast('Search failed','danger')})
-              .finally(()=>{ setLoading(false); var modal = bootstrap.Modal.getInstance(document.getElementById('searchModal')); if (modal) modal.hide(); });
-        }
-
-        // Expenses functions
-        async function fetchExpenses() {
-            const loading = document.getElementById('expensesLoading');
-            const tbody = document.getElementById('expensesTableBody');
-            const countBadge = document.getElementById('expenseCount');
-            loading.style.display = 'block';
-            tbody.style.display = 'none';
-            try {
-                const response = await fetch('{% url "tracker:api_expenses" %}');
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                displayExpenses(data.expenses || data);
-            } catch (err) {
-                console.error('Error loading expenses', err);
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Error loading expenses</td></tr>`;
-            } finally {
-                loading.style.display = 'none';
-                tbody.style.display = '';
-            }
-        }
-
-        function displayExpenses(expenses) {
-            const tbody = document.getElementById('expensesTableBody');
-            const countBadge = document.getElementById('expenseCount');
-            countBadge.textContent = `${expenses.length} expense${expenses.length !== 1 ? 's' : ''}`;
-            if (!expenses.length) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">No expenses found.</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = expenses.map(e => `
-                <tr>
-                    <td>${escapeHtml(e.tender || e.tender_display || e.tender_no || '')}</td>
-                    <td>${escapeHtml(e.category)}</td>
-                    <td>${escapeHtml(e.description || '')}</td>
-                    <td class="text-end">${formatCurrency(e.amount)}</td>
-                    <td>${formatDate(e.date)}</td>
-                    <td class="text-end">
-                        <a href="/expense/${e.id}/edit/" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // Initialize dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            fetchTenders();
-            initCharts();
-
-            // Load expenses when expenses tab is activated
-            var expensesTabEl = document.getElementById('expenses-tab');
-            if (expensesTabEl) {
-                expensesTabEl.addEventListener('shown.bs.tab', function (event) {
-                    // fetch expenses only when expenses tab is shown
-                    fetchExpenses();
-                });
-            }
-
-            // Add enter key support for filters
-            const filterInputs = document.querySelectorAll('#filterForm input, #filterForm select');
-            filterInputs.forEach(input => {
-                input.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        fetchTenders();
-                    }
-                });
+                // Tooltip
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el) });
             });
 
-            // Set default dates for better UX
-            const today = new Date();
-            const oneMonthAgo = new Date();
-            oneMonthAgo.setMonth(today.getMonth() - 1);
-            document.getElementById('dateFrom').valueAsDate = oneMonthAgo;
-            document.getElementById('dateTo').valueAsDate = today;
+            // Export functions to global scope for onclick handlers
+            window.fetchTenders = fetchTenders;
+            window.initCharts = initCharts;
+            window.applyQuickSearch = applyQuickSearch;
+            window.fetchExpenses = fetchExpenses;
+        </script>
 
-            // Tooltip
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-            tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el) });
-        });
-
-        // Export functions to global scope for onclick handlers
-        window.fetchTenders = fetchTenders;
-        window.initCharts = initCharts;
-        window.applyQuickSearch = applyQuickSearch;
-        window.fetchExpenses = fetchExpenses;
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </div>
 </body>
 </html>
