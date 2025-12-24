@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quotation | {{ entry.company.name }}</title>
+
+    <style>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 13px;
+            color: #000;
+            background: #fff;
+        }
+
+        .container {
+            width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #000;
+            padding-bottom: 12px;
+        }
+
+        .company-info h2 {
+            margin: 0;
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+
+        .company-info p {
+            margin: 2px 0;
+        }
+
+        .logo img {
+            max-height: 90px;
+        }
+
+        /* Title */
+        .document-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 25px 0 15px;
+            text-decoration: underline;
+        }
+
+        /* Meta info */
+        .meta {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .meta td {
+            padding: 4px 6px;
+        }
+
+        /* Client box */
+        .client-box {
+            border: 1px solid #000;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Items table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 6px;
+        }
+
+        th {
+            background: #f1f1f1;
+            text-align: left;
+        }
+
+        td.right, th.right {
+            text-align: right;
+        }
+
+        /* Totals */
+        .totals {
+            width: 40%;
+            float: right;
+            margin-top: 15px;
+        }
+
+        .totals td, .totals th {
+            padding: 6px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 70px;
+            clear: both;
+        }
+
+        .sign {
+            width: 30%;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .sign-line {
+            border-top: 1px solid #000;
+            margin-top: 40px;
+            padding-top: 5px;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="company-info">
+            <h2>{{ entry.company.name }}</h2>
+            <p>{{ entry.company.address }}</p>
+            <p>Phone: {{ entry.company.phone }}</p>
+            <p>Email: {{ entry.company.email }}</p>
+        </div>
+
+        <div class="logo">
+            {% if entry.company.logo %}
+                <img src="{{ entry.company.logo.url }}" alt="Company Logo">
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- TITLE -->
+    <div class="document-title">
+        QUOTATION
+    </div>
+
+    <!-- META -->
+    <table class="meta">
+        <tr>
+            <td><strong>Quotation No:</strong> {{ entry.paper_number }}</td>
+            <td><strong>Date:</strong> {{ entry.date|date:"d F Y" }}</td>
+        </tr>
+    </table>
+
+    <!-- CLIENT -->
+    <div class="client-box">
+        <strong>Client Details</strong><br>
+        Name: {{ entry.client.name }}<br>
+        {% if entry.client.contact_person %}
+            Contact Person: {{ entry.client.contact_person }}<br>
+        {% endif %}
+        Phone: {{ entry.client.phone }}<br>
+        {% if entry.client.email %}
+            Email: {{ entry.client.email }}<br>
+        {% endif %}
+        {% if entry.client.address %}
+            Address: {{ entry.client.address }}
+        {% endif %}
+    </div>
+
+    <!-- ITEMS -->
+    <table>
+        <thead>
+        <tr>
+            <th style="width:5%">#</th>
+            <th>Description</th>
+            <th class="right" style="width:10%">Qty</th>
+            <th class="right" style="width:15%">Unit Price</th>
+            <th class="right" style="width:15%">Amount</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in entry.items.all %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.description }}</td>
+                <td class="right">{{ item.quantity }}</td>
+                <td class="right">{{ item.unit_price }}</td>
+                <td class="right">{{ item.amount }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="5" style="text-align:center">No items added</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- TOTALS -->
+    <table class="totals">
+        <tr>
+            <th>Subtotal</th>
+            <td class="right">{{ entry.subtotal }}</td>
+        </tr>
+        <tr>
+            <th>Tax ({{ entry.tax_percentage }}%)</th>
+            <td class="right">{{ entry.tax_amount }}</td>
+        </tr>
+        <tr>
+            <th><strong>Grand Total</strong></th>
+            <td class="right"><strong>{{ entry.total }}</strong></td>
+        </tr>
+    </table>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <div class="sign">
+            <div class="sign-line">Prepared By<br>{{ entry.prepared_by }}</div>
+        </div>
+
+        <div class="sign">
+            <div class="sign-line">Delivered By<br>{{ entry.delivered_by }}</div>
+        </div>
+
+        <div class="sign">
+            <div class="sign-line">Received By<br>{{ entry.received_by }}</div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
