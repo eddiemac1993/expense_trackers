@@ -1,0 +1,218 @@
+{% load humanize %}
+{% load number_words %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Receipt | {{ entry.paper_number }}</title>
+    <style>
+        /* PDF Page Configuration */
+        @page {
+            size: A4;
+            margin: 15mm 15mm 20mm 15mm;
+            @bottom-center {
+                content: "Thank you for your payment.";
+                font-size: 8px;
+                color: #999;
+            }
+        }
+
+        /* Base Styles */
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container { width: 100%; }
+
+        /* Helpers */
+        .bold { font-weight: bold; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .text-muted { color: #777; }
+        .uppercase { text-transform: uppercase; }
+
+        /* Table Layouts */
+        table { width: 100%; border-collapse: collapse; }
+        .table-fixed { table-layout: fixed; }
+        td { vertical-align: top; }
+
+        /* Header Branding */
+        .header-table { margin-bottom: 30px; }
+        .logo { max-height: 80px; width: auto; }
+        .company-title { font-size: 28px; margin: 0; color: #000; letter-spacing: -1px; }
+
+        /* Document Title Bar */
+        .doc-title-bar {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-top: 2px solid #333;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 25px;
+        }
+
+        /* Meta Info Boxes */
+        .meta-label { font-size: 9px; color: #888; text-transform: uppercase; display: block; }
+        .meta-value { font-size: 11px; font-weight: bold; }
+
+        /* Receipt Body */
+        .receipt-content {
+            border: 1px solid #eee;
+            padding: 25px;
+            margin-bottom: 30px;
+            line-height: 2;
+            background-color: #fdfdfd;
+        }
+
+        .line-item { border-bottom: 1px dotted #ccc; display: inline-block; min-width: 250px; padding: 0 10px; font-weight: bold; }
+
+        .amount-words {
+            text-transform: capitalize;
+            font-style: italic;
+            font-weight: bold;
+            color: #222;
+        }
+
+        /* Amount Box */
+        .total-display {
+            margin-top: 20px;
+            background-color: #333;
+            color: #fff;
+            padding: 15px 25px;
+            display: inline-block;
+            font-size: 20px;
+            letter-spacing: 1px;
+        }
+
+        /* Payment Checkboxes */
+        .payment-grid { margin-top: 15px; font-size: 10px; color: #555; }
+        .checkbox { display: inline-block; width: 10px; height: 10px; border: 1px solid #333; margin-right: 5px; vertical-align: middle; }
+
+        /* Footer & Signatures */
+        .footer-details { margin-top: 50px; font-size: 10px; }
+        .signature-space { border-top: 1px solid #333; width: 80%; margin-top: 45px; padding-top: 5px; }
+
+        /* Interactive Elements */
+        .no-print {
+            background: #222; padding: 12px; text-align: center;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .btn-download {
+            color: #fff; text-decoration: none; font-weight: bold;
+            border: 1px solid #fff; padding: 6px 15px; border-radius: 3px;
+            font-size: 10px;
+        }
+
+        @media print {
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Browser-only Navigation -->
+<div class="no-print">
+    <a href="{% url 'paper_pdf' entry.id 'receipt' %}" class="btn-download" target="_blank">
+        PREVIEW AS PDF
+    </a>
+</div>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <table class="header-table">
+        <tr>
+            <td width="50%">
+                {% if entry.company.logo %}
+                    <img src="{% if is_pdf %}file://{{ entry.company.logo.path }}{% else %}{{ entry.company.logo.url }}{% endif %}" class="logo">
+                {% endif %}
+            </td>
+            <td width="50%" class="text-right">
+                <h1 class="company-title">OFFICIAL RECEIPT</h1>
+                <div class="text-muted">
+                    <span class="bold">{{ entry.company.name }}</span><br>
+                    {{ entry.company.address|linebreaksbr }}<br>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- META DATA -->
+    <div class="doc-title-bar">
+        <table class="table-fixed">
+            <tr>
+                <td>
+                    <span class="meta-label">Receipt Number</span>
+                    <span class="meta-value">{{ entry.paper_number }}</span>
+                </td>
+                <td>
+                    <span class="meta-label">Date of Payment</span>
+                    <span class="meta-value">{{ entry.date|date:"d M Y" }}</span>
+                </td>
+                <td class="text-right">
+                    <span class="meta-label">Total Received (ZMW)</span>
+                    <span class="meta-value" style="font-size: 14px;">ZMW {{ entry.total|floatformat:2|intcomma }}</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- RECEIPT CONTENT -->
+    <div class="receipt-content">
+        Received with thanks from: <br>
+        <span class="line-item" style="font-size: 14px; width: 100%;">{{ entry.client.name }}</span>
+        <br><br>
+
+        The sum of: <br>
+        <span class="amount-words" style="border-bottom: 1px dotted #333; padding-right: 50px;">
+            {{ entry.total|amount_in_words }} Only
+        </span>
+        <br><br>
+
+        Being payment for: <br>
+        <span class="line-item" style="width: 100%;">
+            {{ entry.items.all.0.description }}{% if entry.items.all.count > 1 %} and other items{% endif %}
+            (Ref: {{ entry.reference_number|default:entry.paper_number }})
+        </span>
+        <br><br>
+
+        <div class="payment-grid">
+            <span class="bold uppercase" style="margin-right: 15px;">Method:</span>
+            <span class="checkbox"></span> Cash &nbsp;&nbsp;
+            <span class="checkbox"></span> Cheque &nbsp;&nbsp;
+            <span class="checkbox"></span> Bank Transfer &nbsp;&nbsp;
+            <span class="checkbox"></span> Mobile Money
+        </div>
+
+        <div class="total-display">
+            ZMW {{ entry.total|floatformat:2|intcomma }}
+        </div>
+    </div>
+
+    <!-- SIGNATURES -->
+    <div class="footer-details">
+        <table class="table-fixed">
+            <tr>
+                <td width="50%">
+                    <div style="font-size: 9px; color: #666; margin-top: 45px;">
+                        <em>This is a computer generated receipt and is valid only upon successful clearance of funds.</em>
+                    </div>
+                </td>
+                <td width="50%">
+                    <div class="signature-space" style="margin-left: auto;">
+                        <span class="bold">{{ entry.prepared_by|default:entry.company.name }}</span><br>
+                        <span class="text-muted uppercase" style="font-size: 8px;">Authorized Signature & Stamp</span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,3 +1,4 @@
+{% load humanize %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -153,7 +154,11 @@ body {
     </td>
     <td class="logo">
         {% if entry.company.logo %}
-            <img src="file://{{ entry.company.logo.path }}">
+            {% if is_pdf %}
+                <img src="file://{{ entry.company.logo.path }}">
+            {% else %}
+                <img src="{{ entry.company.logo.url }}">
+            {% endif %}
         {% endif %}
     </td>
 </tr>
@@ -170,8 +175,6 @@ body {
     <td>
         <strong>Client:</strong><br>
         {{ entry.client.name }}<br>
-        {{ entry.client.phone }}<br>
-        {{ entry.client.email }}
     </td>
 </tr>
 </table>
@@ -191,9 +194,9 @@ body {
 <tr>
     <td>{{ forloop.counter }}</td>
     <td>{{ item.description }}</td>
-    <td class="right">{{ item.quantity }}</td>
-    <td class="right">{{ item.unit_price }}</td>
-    <td class="right">{{ item.amount }}</td>
+    <td class="right">{{ item.quantity|floatformat:2 }}</td>
+    <td class="right">{{ item.unit_price|floatformat:2|intcomma }}</td>
+    <td class="right">{{ item.amount|floatformat:2|intcomma }}</td>
 </tr>
 {% endfor %}
 </tbody>
@@ -202,15 +205,15 @@ body {
 <table class="totals-table">
 <tr>
     <td>SUBTOTAL</td>
-    <td class="right">{{ entry.subtotal }}</td>
+    <td class="right">{{ entry.subtotal|floatformat:2|intcomma }}</td>
 </tr>
 <tr>
     <td>TAX ({{ entry.tax_percentage }}%)</td>
-    <td class="right">{{ entry.tax_amount }}</td>
+    <td class="right">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
 </tr>
 <tr>
     <td><strong>GRAND TOTAL</strong></td>
-    <td class="right"><strong>{{ entry.total }}</strong></td>
+    <td class="right"><strong>{{ entry.total|floatformat:2|intcomma }}</strong></td>
 </tr>
 </table>
 

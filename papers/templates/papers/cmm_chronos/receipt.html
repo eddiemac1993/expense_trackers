@@ -1,0 +1,170 @@
+{% load humanize %}
+{% load number_words %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Receipt | {{ entry.company.name }}</title>
+
+<style>
+body {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 12.5px;
+    color: #000;
+}
+
+.header-table, .info-table, .amount-table, .signature-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.header-table td {
+    vertical-align: top;
+}
+
+.company-name {
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.logo img {
+    max-height: 70px;
+    float: right;
+}
+
+.section-title {
+    font-weight: bold;
+    margin: 15px 0 5px;
+    border-bottom: 1px solid #000;
+    padding-bottom: 3px;
+}
+
+.info-table td {
+    width: 50%;
+    padding: 4px;
+}
+
+.amount-table td {
+    border: 1px solid #000;
+    padding: 8px;
+    font-size: 14px;
+}
+
+.signature-table {
+    margin-top: 60px;
+    text-align: center;
+}
+
+.signature-line {
+    border-top: 1px solid #000;
+    padding-top: 5px;
+    margin-top: 40px;
+}
+
+.no-print {
+    text-align: right;
+    margin-bottom: 10px;
+}
+
+.no-print a {
+    padding: 6px 12px;
+    background: #0f2a44;
+    color: #fff;
+    text-decoration: none;
+}
+
+@media print {
+    .no-print { display: none; }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<!-- DOWNLOAD PDF -->
+<div class="no-print">
+    <a href="{% url 'paper_pdf' entry.id 'receipt' %}" target="_blank">
+        Download PDF
+    </a>
+</div>
+
+<!-- HEADER -->
+<table class="header-table">
+<tr>
+    <td>
+        <div class="company-name">{{ entry.company.name }}</div>
+        {{ entry.company.address }}<br>
+        {{ entry.company.phone }}<br>
+        {{ entry.company.email }}
+    </td>
+    <td class="logo">
+        {% if entry.company.logo %}
+            {% if is_pdf %}
+                <img src="file://{{ entry.company.logo.path }}">
+            {% else %}
+                <img src="{{ entry.company.logo.url }}">
+            {% endif %}
+        {% endif %}
+    </td>
+</tr>
+</table>
+
+<div class="section-title">OFFICIAL RECEIPT</div>
+
+<!-- INFO -->
+<table class="info-table">
+<tr>
+    <td>
+        <strong>Receipt No:</strong> {{ entry.paper_number }}<br>
+        <strong>Date:</strong> {{ entry.date|date:"d M Y" }}
+    </td>
+    <td>
+        <strong>Received From:</strong><br>
+        {{ entry.client.name }}<br>
+        {{ entry.client.phone }}
+    </td>
+</tr>
+</table>
+
+<!-- AMOUNT -->
+<table class="amount-table">
+<tr>
+    <td><strong>Amount Received</strong></td>
+    <td><strong>ZMW {{ entry.total|floatformat:2|intcomma }}</strong></td>
+</tr>
+<tr>
+    <td><strong>Amount in Words</strong></td>
+    <td>
+        <em>{{ entry.total|amount_in_words }}</em>
+    </td>
+</tr>
+<tr>
+    <td>Payment Method</td>
+    <td>Cash / Bank Transfer / Mobile Money</td>
+</tr>
+<tr>
+    <td>Reference</td>
+    <td>________________________</td>
+</tr>
+</table>
+
+<!-- SIGNATURE -->
+<table class="signature-table">
+<tr>
+    <td>
+        <div class="signature-line">Received By</div>
+    </td>
+    <td>
+        <div class="signature-line">Signature</div>
+    </td>
+    <td>
+        <div class="signature-line">Date</div>
+    </td>
+</tr>
+</table>
+
+</div>
+</body>
+</html>

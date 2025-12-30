@@ -1,0 +1,281 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Quotation | {{ entry.paper_number }}</title>
+    <style>
+        /* PDF Page Configuration */
+        @page {
+            size: A4;
+            margin: 15mm 15mm 20mm 15mm;
+            @bottom-center {
+                content: "Thank you for your business.";
+                font-size: 8px;
+                color: #999;
+            }
+        }
+
+        /* Base Styles */
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container { width: 100%; }
+
+        /* Helpers */
+        .bold { font-weight: bold; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .text-muted { color: #777; }
+        .uppercase { text-transform: uppercase; }
+
+        /* Table Layouts */
+        table { width: 100%; border-collapse: collapse; }
+        .table-fixed { table-layout: fixed; }
+        td { vertical-align: top; }
+
+        /* Header Branding */
+        .header-table { margin-bottom: 30px; }
+        .logo { max-height: 80px; width: auto; }
+        .company-title { font-size: 28px; margin: 0; color: #000; letter-spacing: -1px; }
+
+        /* Document Title Bar */
+        .doc-title-bar {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-top: 2px solid #333;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 25px;
+        }
+
+        /* Meta Info Boxes */
+        .meta-label { font-size: 9px; color: #888; text-transform: uppercase; display: block; }
+        .meta-value { font-size: 11px; font-weight: bold; }
+
+        /* Client Info */
+        .client-info { margin-bottom: 35px; }
+        .section-header {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #888;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        /* Items Table */
+        .items-table { margin-bottom: 30px; }
+        .items-table th {
+            background-color: #333;
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+        .items-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .items-table tr:last-child td { border-bottom: 2px solid #333; }
+
+        /* Totals Area */
+        .summary-section { page-break-inside: avoid; }
+        .total-row { font-size: 14px; color: #000; }
+        .total-box { background-color: #f8f9fa; padding: 10px; }
+
+        /* Footer & Signatures */
+        .footer-details { margin-top: 40px; font-size: 10px; }
+        .signature-space { border-top: 1px solid #333; width: 80%; margin-top: 45px; padding-top: 5px; }
+
+        /* Interactive Elements */
+        .no-print {
+            background: #222; padding: 12px; text-align: center;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .btn-download {
+            color: #fff; text-decoration: none; font-weight: bold;
+            border: 1px solid #fff; padding: 6px 15px; border-radius: 3px;
+        }
+
+        @media print {
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Browser-only Navigation -->
+<div class="no-print">
+    <a href="{% url 'paper_pdf' entry.id 'quotation' %}" class="btn-download" target="_blank">
+        PREVIEW AS PDF
+    </a>
+</div>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <table class="header-table">
+        <tr>
+            <td width="50%">
+                {% if entry.company.logo %}
+                    <img src="{% if is_pdf %}file://{{ entry.company.logo.path }}{% else %}{{ entry.company.logo.url }}{% endif %}" class="logo">
+                {% endif %}
+            </td>
+            <td width="50%" class="text-right">
+                <h1 class="company-title">QUOTATION</h1>
+                <div class="text-muted">
+                    <span class="bold">{{ entry.company.name }}</span><br>
+                    {{ entry.company.address|linebreaksbr }}<br>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- META DATA -->
+    <div class="doc-title-bar">
+        <table class="table-fixed">
+            <tr>
+                <td>
+                    <span class="meta-label">Quote Number</span>
+                    <span class="meta-value">{{ entry.paper_number }}</span>
+                </td>
+                <td>
+                    <span class="meta-label">Date of Issue</span>
+                    <span class="meta-value">{{ entry.date|date:"d M Y" }}</span>
+                </td>
+                <td>
+                    <span class="meta-label">Valid Until</span>
+                    <span class="meta-value">{{ entry.expiry_date|default:"14 Days from Issue" }}</span>
+                </td>
+                <td class="text-right">
+                    <span class="meta-label">Total Amount (ZMW)</span>
+                    <span class="meta-value" style="font-size: 14px;">ZMW {{ entry.total|floatformat:2|intcomma }}</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- CLIENT INFO -->
+    <div class="client-info">
+        <table class="table-fixed">
+            <tr>
+                <td width="50%">
+                    <div class="section-header">Quotation For:</div>
+                    <div style="font-size: 13px;">
+                        <span class="bold">{{ entry.client.name }}</span><br>
+                        {{ entry.client.address|default:""|linebreaksbr }}
+                        <span class="text-muted">{{ entry.client.phone }}</span><br>
+                        <span class="text-muted">{{ entry.client.email }}</span>
+                    </div>
+                </td>
+                <td width="50%" class="text-right">
+                    <!-- Optional: Project details or Reference -->
+                    {% if entry.reference %}
+                    <div class="section-header">Reference:</div>
+                    <span class="bold">{{ entry.reference }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- LINE ITEMS -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th width="40">#</th>
+                <th>Description</th>
+                <th width="60" class="text-center">Qty</th>
+                <th width="100" class="text-right">Unit Rate</th>
+                <th width="110" class="text-right">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in entry.items.all %}
+            <tr>
+                <td class="text-muted">{{ forloop.counter }}</td>
+                <td>
+                    <span class="bold">{{ item.product_name|default:item.description }}</span>
+                    {% if item.product_name %}<br><span class="text-muted" style="font-size: 9px;">{{ item.description }}</span>{% endif %}
+                </td>
+                <td class="text-center">{{ item.quantity|floatformat:0 }}</td>
+                <td class="text-right">{{ item.unit_price|floatformat:2|intcomma }}</td>
+                <td class="text-right bold">{{ item.amount|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- TOTALS & TERMS -->
+    <div class="summary-section">
+        <table>
+            <tr>
+                <td width="55%" style="padding-right: 40px;">
+                    <div class="section-header">Terms & Conditions</div>
+                    <ul style="padding-left: 15px; margin: 0; font-size: 9px; color: #666;">
+                        <li>Pricing is subject to the scope of work described above.</li>
+                        <li>Payments should be made via bank transfer or check.</li>
+                        <li>Delivery timelines will be confirmed upon deposit receipt.</li>
+                        <li>Please quote the Reference Number when making payments.</li>
+                    </ul>
+
+                    {% if entry.company.bank_details %}
+                    <div class="section-header" style="margin-top: 15px;">Bank Details</div>
+                    <div style="font-size: 9px; color: #444;">
+                        {{ entry.company.bank_details|linebreaksbr }}
+                    </div>
+                    {% endif %}
+                </td>
+                <td width="45%">
+                    <table class="total-box">
+                        <tr>
+                            <td class="text-muted uppercase" style="font-size: 9px;">Subtotal</td>
+                            <td class="text-right bold">{{ entry.subtotal|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted uppercase" style="font-size: 9px;">Tax ({{ entry.tax_percentage }}%)</td>
+                            <td class="text-right bold">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td style="padding-top: 10px; border-top: 1px solid #ddd;">GRAND TOTAL</td>
+                            <td class="text-right bold" style="padding-top: 10px; border-top: 1px solid #ddd;">
+                                ZMW {{ entry.total|floatformat:2|intcomma }}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- SIGNATURES -->
+    <div class="footer-details">
+        <table class="table-fixed">
+            <tr>
+                <td>
+                    <div class="signature-space">
+                        <span class="bold">{{ entry.prepared_by|default:entry.company.name }}</span><br>
+                        <span class="text-muted uppercase" style="font-size: 8px;">Authorized Signatory</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="signature-space" style="margin-left: auto;">
+                        <br>
+                        <span class="text-muted uppercase" style="font-size: 8px;">Client Acceptance (Sign & Date)</span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>

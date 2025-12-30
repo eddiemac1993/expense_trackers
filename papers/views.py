@@ -67,7 +67,9 @@ def paper_pdf(request, entry_id, paper_type):
     html_string = template.render({
         "entry": entry,
         "request": request,
+        "is_pdf": True,
     })
+
 
     font_config = FontConfiguration()
 
