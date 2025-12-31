@@ -36,6 +36,32 @@
             position: relative;
         }
 
+        /* High-Visibility Identification Badge - Moved higher, background removed */
+        .outside-id-badge {
+            position: absolute;
+            top: 5px; /* Moved slightly higher from 10px */
+            right: 50px;
+            background-color: transparent; /* "No color" as requested */
+            color: #ffffff; /* White text as requested */
+            padding: 10px 0; /* Adjusted padding for no background */
+            font-weight: 800;
+            font-size: 14px;
+            z-index: 100;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: none; /* Removed shadow for the "no color" look */
+        }
+
+        /* Specific font for the ID number */
+        .id-number {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.2em;
+            margin-left: 5px;
+            color: #ffffff; /* Explicitly white text for the number */
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+
         /* Accent Elements */
         .accent-bar {
             height: 120px;
@@ -68,7 +94,7 @@
             margin: 0;
             text-transform: uppercase;
             text-align: right;
-            color: #e11d48; /* Crimson Accent */
+            color: #e11d48; /* Crimson Accent restored */
         }
 
         /* Info Grid */
@@ -85,7 +111,15 @@
 
         /* Client & Company */
         .parties-section { margin-bottom: 50px; }
-        .heading-small { font-size: 10px; font-weight: 800; color: #e11d48; text-transform: uppercase; margin-bottom: 12px; border-left: 3px solid #e11d48; padding-left: 10px; }
+        .heading-small { 
+            font-size: 10px; 
+            font-weight: 800; 
+            color: #e11d48; /* Crimson Accent restored */
+            text-transform: uppercase; 
+            margin-bottom: 12px; 
+            border-left: 3px solid #e11d48; /* Crimson Accent restored */
+            padding-left: 10px; 
+        }
 
         /* Modern Table */
         .items-table { margin-bottom: 40px; }
@@ -133,8 +167,12 @@
 
         /* Browser Preview */
         .no-print {
-            background: #e11d48; padding: 12px; text-align: center;
-            position: sticky; top: 0; z-index: 100;
+            background: #e11d48; /* Crimson Accent restored */
+            padding: 12px; 
+            text-align: center;
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
         }
         .btn {
             color: #fff; text-decoration: none; font-weight: bold;
@@ -156,6 +194,11 @@
 </div>
 
 <div class="page-wrapper">
+    <!-- FLOATING ID BADGE (Now borderless, transparent, and white text) -->
+    <div class="outside-id-badge">
+        DL NO: <span class="id-number">{{ entry.paper_number }}</span>
+    </div>
+
     <div class="accent-bar"></div>
 
     <div class="content">
@@ -180,8 +223,8 @@
             <table class="table-fixed">
                 <tr>
                     <td>
-                        <span class="label">Delivery No.</span>
-                        <span class="value">#{{ entry.paper_number }}</span>
+                        <span class="label">Status</span>
+                        <span class="value">Official Release</span>
                     </td>
                     <td>
                         <span class="label">Delivery Date</span>
@@ -201,16 +244,17 @@
             <tr>
                 <td style="padding-right: 50px;">
                     <div class="heading-small">From: Dispatch Point</div>
-                    <div class="bold" style="font-size: 13px; color: #0f172a;">{{ entry.company.name }}</div>
+                    <div style="font-weight: bold; font-size: 13px; color: #0f172a;">{{ entry.company.name }}</div>
                     <div style="margin-top: 5px;">
                         {{ entry.company.address|linebreaksbr }}<br>
-                        <span class="bold">T:</span> {{ entry.company.phone }}
+                        <span style="font-weight: bold;">T:</span> {{ entry.company.phone }}
                     </div>
                 </td>
                 <td>
                     <div class="heading-small">To: Delivery Address</div>
-                    <div class="bold" style="font-size: 13px; color: #0f172a;">{{ entry.client.name }}</div>
+                    <div style="font-weight: bold; font-size: 13px; color: #0f172a;">{{ entry.client.name }}</div>
                     <div style="margin-top: 5px;">
+                        {{ entry.client.address|default:"As per Customer Account"|linebreaksbr }}
                     </div>
                 </td>
             </tr>
@@ -258,17 +302,17 @@
                 <td style="padding-right: 40px;">
                     <div class="signature-box"></div>
                     <span class="label">Warehouse Release</span>
-                    <div class="bold" style="color: #0f172a;">Authorized Personnel</div>
+                    <div style="font-weight: bold; color: #0f172a;">Authorized Personnel</div>
                 </td>
                 <td style="padding-right: 40px;">
                     <div class="signature-box"></div>
                     <span class="label">Delivered By (Driver)</span>
-                    <div class="bold" style="color: #0f172a;">Name: ________________</div>
+                    <div style="font-weight: bold; color: #0f172a;">Name: ________________</div>
                 </td>
                 <td>
                     <div class="signature-box"></div>
                     <span class="label">Received By (Customer)</span>
-                    <div class="bold" style="color: #0f172a;">Sign & Stamp</div>
+                    <div style="font-weight: bold; color: #0f172a;">Sign & Stamp</div>
                 </td>
             </tr>
         </table>

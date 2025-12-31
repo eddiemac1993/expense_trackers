@@ -6,9 +6,10 @@
 <title>Quotation | {{ entry.company.name }}</title>
 
 <style>
+/* PDF Page Configuration */
 @page {
     size: A4;
-    margin: 18mm;
+    margin: 0;
 }
 
 body {
@@ -16,18 +17,63 @@ body {
     font-size: 12px;
     color: #000;
     margin: 0;
+    padding: 0;
+    position: relative;
+}
+
+.page-wrapper {
+    width: 100%;
+    min-height: 297mm;
+    background: #fff;
+    position: relative;
+}
+
+/* Dark Header Bar to support white text badge */
+.accent-bar {
+    height: 80px;
+    background-color: #0f172a; /* Slate 900 */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+}
+
+/* High-Visibility Identification Badge - Background removed, white text */
+.outside-id-badge {
+    position: absolute;
+    top: 8px; /* High on top */
+    right: 50px;
+    background-color: transparent;
+    color: #ffffff;
+    padding: 10px 0;
+    z-index: 100;
+}
+
+/* Bold Serif font for the ID number - Official Stamp look */
+.id-number {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 1px;
 }
 
 .wrapper {
     width: 170mm;
     margin: 0 auto;
+    position: relative;
+    z-index: 2;
+    padding-top: 20px;
 }
 
 /* ===== HEADER ===== */
 .header {
     width: 100%;
-    border-bottom: 3px solid #000;
-    margin-bottom: 12px;
+    border-bottom: 3px solid #ffffff; /* Contrast line against dark bar */
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    color: #ffffff;
 }
 
 .header-table {
@@ -43,27 +89,31 @@ body {
     margin: 0;
     font-size: 20px;
     text-transform: uppercase;
+    letter-spacing: -0.5px;
 }
 
 .company-block p {
     margin: 2px 0;
     font-size: 11px;
+    opacity: 0.9;
 }
 
 .logo img {
-    max-height: 28mm;
+    max-height: 25mm;
     float: right;
+    filter: brightness(0) invert(1); /* Ensures logo is visible on dark background */
 }
 
 /* ===== TITLE BAR ===== */
 .title-bar {
     margin: 15px 0;
-    padding: 8px;
+    padding: 10px;
     border: 2px solid #000;
     text-align: center;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    background: #f9f9f9;
 }
 
 /* ===== INFO GRID ===== */
@@ -75,13 +125,16 @@ body {
 
 .info-grid td {
     border: 1px solid #000;
-    padding: 6px;
+    padding: 8px;
     vertical-align: top;
 }
 
 .info-grid .label {
     font-weight: bold;
     width: 30%;
+    background: #f2f2f2;
+    font-size: 10px;
+    text-transform: uppercase;
 }
 
 /* ===== ITEMS ===== */
@@ -93,13 +146,14 @@ body {
 .items th,
 .items td {
     border: 1px solid #000;
-    padding: 6px;
+    padding: 10px 8px;
 }
 
 .items th {
     background: #eaeaea;
     text-transform: uppercase;
     font-size: 11px;
+    letter-spacing: 0.5px;
 }
 
 .text-right {
@@ -108,28 +162,30 @@ body {
 
 /* ===== TOTALS ===== */
 .totals {
-    width: 60mm;
+    width: 65mm;
     margin-left: auto;
-    margin-top: 10px;
+    margin-top: 15px;
     border-collapse: collapse;
 }
 
 .totals td {
     border: 1px solid #000;
-    padding: 6px;
+    padding: 8px;
 }
 
 .totals .grand {
     font-weight: bold;
     background: #f2f2f2;
+    font-size: 13px;
 }
 
 /* ===== NOTES ===== */
 .notes {
-    margin-top: 15px;
+    margin-top: 20px;
     border: 1px solid #000;
-    padding: 8px;
+    padding: 12px;
     font-size: 11px;
+    line-height: 1.5;
 }
 
 /* ===== SIGNATURES ===== */
@@ -142,144 +198,167 @@ body {
 .signatures td {
     width: 33%;
     text-align: center;
+    padding: 0 10px;
 }
 
 .sig-line {
     margin-top: 15mm;
     border-top: 1px solid #000;
-    padding-top: 4px;
+    padding-top: 6px;
     font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
 }
 
 /* ===== PDF BUTTON ===== */
 .no-print {
     text-align: right;
-    margin-bottom: 8px;
+    padding: 15px;
+    background: #f1f5f9;
 }
 
 .no-print a {
-    padding: 6px 12px;
-    background: #000;
+    padding: 8px 16px;
+    background: #0f172a;
     color: #fff;
     text-decoration: none;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 4px;
 }
 
 @media print {
     .no-print { display: none; }
+    .accent-bar { -webkit-print-color-adjust: exact; }
 }
 </style>
 </head>
 
 <body>
-<div class="wrapper">
 
 <div class="no-print">
     <a href="{% url 'paper_pdf' entry.id 'quotation' %}" target="_blank">
-        Download PDF
+        DOWNLOAD PDF DOCUMENT
     </a>
 </div>
 
-<!-- HEADER -->
-<div class="header">
-<table class="header-table">
-<tr>
-    <td class="company-block">
-        <h1>{{ entry.company.name }}</h1>
-        <p>{{ entry.company.address }}</p>
-        <p>Tel: {{ entry.company.phone }}</p>
-        <p>Email: {{ entry.company.email }}</p>
-    </td>
-    <td class="logo">
-        {% if entry.company.logo %}
-            {% if is_pdf %}
-                <img src="file://{{ entry.company.logo.path }}">
-            {% else %}
-                <img src="{{ entry.company.logo.url }}">
-            {% endif %}
-        {% endif %}
-    </td>
-</tr>
-</table>
-</div>
+<div class="page-wrapper">
+    <!-- DARK ACCENT BAR -->
+    <div class="accent-bar"></div>
 
-<!-- TITLE -->
-<div class="title-bar">
-    QUOTATION
-</div>
+    <!-- FLOATING ID BADGE (White text, No Background) -->
+    <div class="outside-id-badge">
+        <span class="id-number">{{ entry.paper_number }}</span>
+    </div>
 
-<!-- INFO -->
-<table class="info-grid">
-<tr>
-    <td class="label">Quotation No</td>
-    <td>{{ entry.paper_number }}</td>
-    <td class="label">Date</td>
-    <td>{{ entry.date|date:"d M Y" }}</td>
-</tr>
-<tr>
-    <td class="label">Client</td>
-    <td colspan="3">
-        {{ entry.client.name }}<br>
-    </td>
-</tr>
-</table>
+    <div class="wrapper">
 
-<!-- ITEMS -->
-<table class="items">
-<thead>
-<tr>
-    <th style="width:5%">#</th>
-    <th>Description</th>
-    <th style="width:12%">Qty</th>
-    <th style="width:18%">Unit Price</th>
-    <th style="width:20%">Amount</th>
-</tr>
-</thead>
-<tbody>
-{% for item in entry.items.all %}
-<tr>
-    <td>{{ forloop.counter }}</td>
-    <td>{{ item.description }}</td>
-    <td class="text-right">{{ item.quantity|floatformat:2 }}</td>
-    <td class="text-right">{{ item.unit_price|floatformat:2|intcomma }}</td>
-    <td class="text-right">{{ item.amount|floatformat:2|intcomma }}</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
+        <!-- HEADER -->
+        <div class="header">
+            <table class="header-table">
+                <tr>
+                    <td class="company-block">
+                        <h1>{{ entry.company.name }}</h1>
+                        <p>{{ entry.company.address }}</p>
+                        <p>Tel: {{ entry.company.phone }} | Email: {{ entry.company.email }}</p>
+                    </td>
+                    <td class="logo">
+                        {% if entry.company.logo %}
+                            {% if is_pdf %}
+                                <img src="file://{{ entry.company.logo.path }}">
+                            {% else %}
+                                <img src="{{ entry.company.logo.url }}">
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
 
-<!-- TOTALS -->
-<table class="totals">
-<tr>
-    <td>Subtotal</td>
-    <td class="text-right">{{ entry.subtotal|floatformat:2|intcomma }}</td>
-</tr>
-<tr>
-    <td>Tax ({{ entry.tax_percentage }}%)</td>
-    <td class="text-right">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
-</tr>
-<tr class="grand">
-    <td>Grand Total</td>
-    <td class="text-right">{{ entry.total|floatformat:2|intcomma }}</td>
-</tr>
-</table>
+        <!-- TITLE -->
+        <div class="title-bar">
+            QUOTATION
+        </div>
 
-<!-- NOTES -->
-<div class="notes">
-<strong>Notes:</strong><br>
-• Prices quoted are valid for 7 days.<br>
-• Payment terms: As agreed.<br>
-• Delivery subject to availability.
-</div>
+        <!-- INFO GRID -->
+        <table class="info-grid">
+            <tr>
+                <td class="label">Reference No</td>
+                <td><strong>{{ entry.paper_number }}</strong></td>
+                <td class="label">Date Issued</td>
+                <td>{{ entry.date|date:"d M Y" }}</td>
+            </tr>
+            <tr>
+                <td class="label">Client Details</td>
+                <td colspan="3" style="font-size: 13px;">
+                    <strong>{{ entry.client.name }}</strong><br>
+                    {{ entry.client.address|default:"As per account address"|linebreaksbr }}
+                </td>
+            </tr>
+        </table>
 
-<!-- SIGNATURES -->
-<table class="signatures">
-<tr>
-    <td><div class="sig-line">Prepared By</div></td>
-    <td><div class="sig-line">Approved By</div></td>
-    <td><div class="sig-line">Client Signature</div></td>
-</tr>
-</table>
+        <!-- ITEMS -->
+        <table class="items">
+            <thead>
+                <tr>
+                    <th style="width:5%">#</th>
+                    <th>Description of Goods/Services</th>
+                    <th style="width:12%">Qty</th>
+                    <th style="width:18%">Unit Price</th>
+                    <th style="width:20%">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in entry.items.all %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td><strong>{{ item.description }}</strong></td>
+                    <td class="text-right">{{ item.quantity|floatformat:2 }}</td>
+                    <td class="text-right">{{ item.unit_price|floatformat:2|intcomma }}</td>
+                    <td class="text-right"><strong>{{ item.amount|floatformat:2|intcomma }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
+        <!-- TOTALS -->
+        <table class="totals">
+            <tr>
+                <td>Subtotal</td>
+                <td class="text-right">{{ entry.subtotal|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr>
+                <td>Tax ({{ entry.tax_percentage }}%)</td>
+                <td class="text-right">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr class="grand">
+                <td><strong>Total Amount</strong></td>
+                <td class="text-right"><strong>{{ entry.total|floatformat:2|intcomma }}</strong></td>
+            </tr>
+        </table>
+
+        <!-- NOTES -->
+        <div class="notes">
+            <strong>Notes & Terms:</strong><br>
+            • Prices quoted are valid for {{ entry.validity_days|default:"7" }} days.<br>
+            • Payment terms: As per standard agreement.<br>
+            • Delivery/Completion: Subject to availability and confirmation of order.
+        </div>
+
+        <!-- SIGNATURES -->
+        <table class="signatures">
+            <tr>
+                <td><div class="sig-line">Prepared By</div></td>
+                <td><div class="sig-line">Approved By</div></td>
+                <td><div class="sig-line">Client Acknowledgement</div></td>
+            </tr>
+        </table>
+
+        <div style="margin-top: 25mm; text-align: center; font-size: 9px; color: #666; border-top: 1px solid #eee; padding-top: 10px;">
+            {{ entry.company.name }} | {{ entry.company.email }}
+        </div>
+
+    </div>
 </div>
 </body>
 </html>

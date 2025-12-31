@@ -36,6 +36,30 @@
             position: relative;
         }
 
+        /* High-Visibility Identification Badge - Borderless, Transparent, White Text */
+        .outside-id-badge {
+            position: absolute;
+            top: 10px; /* High on top */
+            right: 50px;
+            background-color: transparent; /* No color background */
+            color: #ffffff; /* White text */
+            padding: 10px 0;
+            font-weight: 800;
+            font-size: 14px;
+            z-index: 100;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Monospaced font for the ID number */
+        .id-number {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.2em;
+            margin-left: 5px;
+            color: #ffffff;
+            border-radius: 2px;
+        }
+
         /* Accent Elements */
         .accent-bar {
             height: 120px;
@@ -51,7 +75,7 @@
         .content {
             position: relative;
             z-index: 2;
-            /* Increased right padding (from 50px to 75px) for better print fit */
+            /* Increased right padding for better print fit */
             padding: 40px 75px 40px 50px;
         }
 
@@ -160,6 +184,11 @@
 </div>
 
 <div class="page-wrapper">
+    <!-- FLOATING ID BADGE -->
+    <div class="outside-id-badge">
+        QT NO: <span class="id-number">{{ entry.paper_number }}</span>
+    </div>
+
     <div class="accent-bar"></div>
 
     <div class="content">
@@ -208,12 +237,17 @@
             <tr>
                 <td style="padding-right: 50px;">
                     <div class="heading-small">Service Provider</div>
-                    <div class="bold" style="font-size: 13px; color: #0f172a;">{{ entry.company.name }}</div>
+                    <div style="font-weight: bold; font-size: 13px; color: #0f172a;">{{ entry.company.name }}</div>
+                    <div style="margin-top: 5px;">
+                        {{ entry.company.address|linebreaksbr }}<br>
+                        <span style="font-weight: bold;">T:</span> {{ entry.company.phone }}
+                    </div>
                 </td>
                 <td>
                     <div class="heading-small">Quote Prepared For</div>
-                    <div class="bold" style="font-size: 13px; color: #0f172a;">{{ entry.client.name }}</div>
+                    <div style="font-weight: bold; font-size: 13px; color: #0f172a;">{{ entry.client.name }}</div>
                     <div style="margin-top: 5px;">
+                        {{ entry.client.address|default:"As per Customer Account"|linebreaksbr }}
                     </div>
                 </td>
             </tr>
@@ -253,12 +287,12 @@
                     <td width="55%" style="padding-right: 60px;">
                         <div class="heading-small">Notes & Bank Information</div>
                         <div style="font-size: 9px; color: #64748b; margin-bottom: 15px;">
-                            • Prices are quoted in <span class="bold">Zambian Kwacha (ZMW)</span>.<br>
+                            • Prices are quoted in <span style="font-weight: bold;">Zambian Kwacha (ZMW)</span>.<br>
                             • Quote valid for a period of {{ entry.expiry_days|default:"14" }} days.<br>
                             • Work to commence only after deposit confirmation.
                         </div>
                         <div style="background-color: #f8fafc; padding: 12px; border-radius: 4px; font-size: 9px; border: 1px dashed #cbd5e1;">
-                            <span class="bold" style="color: #0f172a;">Payment Details:</span><br>
+                            <span style="font-weight: bold; color: #0f172a;">Payment Details:</span><br>
                             {{ entry.company.bank_details|default:"Please contact us for banking details."|linebreaksbr }}
                         </div>
                     </td>
@@ -290,12 +324,12 @@
                 <td style="padding-right: 80px;">
                     <div class="signature-box"></div>
                     <span class="label">Authorized Signatory</span>
-                    <div class="bold" style="color: #0f172a;">{{ entry.prepared_by|default:entry.company.name }}</div>
+                    <div style="font-weight: bold; color: #0f172a;">{{ entry.prepared_by|default:entry.company.name }}</div>
                 </td>
                 <td>
                     <div class="signature-box"></div>
                     <span class="label">Customer Acceptance</span>
-                    <div class="bold" style="color: #0f172a;">{{ entry.client.name }}</div>
+                    <div style="font-weight: bold; color: #0f172a;">{{ entry.client.name }}</div>
                 </td>
             </tr>
         </table>

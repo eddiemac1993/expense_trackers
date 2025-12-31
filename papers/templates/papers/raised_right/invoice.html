@@ -24,9 +24,30 @@
             color: #333;
             margin: 0;
             padding: 0;
+            position: relative; /* Essential for absolute positioning of children */
         }
 
-        .container { width: 100%; }
+        .container { 
+            width: 100%; 
+            position: relative;
+            padding-top: 10px; /* Added a small buffer to the top */
+        }
+
+        /* The "Outside Boundary" Invoice Number Styling */
+        .outside-invoice-id {
+            position: absolute;
+            top: -40px; /* Moved significantly higher (was -5px) */
+            right: 0;
+            font-size: 20px; /* Slightly larger for visibility */
+            font-weight: 900;
+            color: #000;
+            border: 2.5px solid #000;
+            padding: 8px 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background-color: #fff;
+            z-index: 100;
+        }
 
         /* Helpers */
         .bold { font-weight: bold; }
@@ -97,7 +118,7 @@
         /* Interactive Elements */
         .no-print {
             background: #222; padding: 12px; text-align: center;
-            position: sticky; top: 0; z-index: 100;
+            position: sticky; top: 0; z-index: 101;
         }
         .btn-download {
             color: #fff; text-decoration: none; font-weight: bold;
@@ -107,6 +128,7 @@
 
         @media print {
             .no-print { display: none; }
+            .outside-invoice-id { top: -45px; } /* Slightly more aggressive on actual print */
         }
     </style>
 </head>
@@ -120,6 +142,11 @@
 </div>
 
 <div class="container">
+
+    <!-- FLOATING INVOICE ID (Updated prefix) -->
+    <div class="outside-invoice-id">
+        INV NO: {{ entry.paper_number }}
+    </div>
 
     <!-- HEADER -->
     <table class="header-table">
@@ -145,8 +172,8 @@
         <table class="table-fixed">
             <tr>
                 <td>
-                    <span class="meta-label">Invoice Number</span>
-                    <span class="meta-value">{{ entry.paper_number }}</span>
+                    <span class="meta-label">Status</span>
+                    <span class="meta-value">OFFICIAL DOCUMENT</span>
                 </td>
                 <td>
                     <span class="meta-label">Date of Issue</span>
@@ -225,7 +252,7 @@
                             <span class="bold">Bank Name:</span> First Capital Bank | Kamwala<br>
                             <span class="bold">Account Name:</span> RAISED RIGHT INVESTMENTS LIMITED<br>
                             <span class="bold">Account Number:</span> 0006203001372<br>
-                            <span class="bold">Branch Code:</span>280006<br>
+                            <span class="bold">Branch Code:</span> 280006<br>
                             <span class="bold">Branch/Swift:</span> FRCGZMLU
                         {% endif %}
                     </div>

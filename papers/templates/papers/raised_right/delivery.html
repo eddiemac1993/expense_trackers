@@ -24,9 +24,30 @@
             color: #333;
             margin: 0;
             padding: 0;
+            position: relative; /* Essential for absolute positioning of the ID badge */
         }
 
-        .container { width: 100%; }
+        .container { 
+            width: 100%; 
+            position: relative;
+            padding-top: 10px;
+        }
+
+        /* The "Outside Boundary" Identification Styling */
+        .outside-id-badge {
+            position: absolute;
+            top: -40px; 
+            right: 0;
+            font-size: 20px;
+            font-weight: 900;
+            color: #000;
+            border: 2.5px solid #000;
+            padding: 8px 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background-color: #fff;
+            z-index: 100;
+        }
 
         /* Helpers */
         .bold { font-weight: bold; }
@@ -100,7 +121,7 @@
         /* Interactive Elements */
         .no-print {
             background: #222; padding: 12px; text-align: center;
-            position: sticky; top: 0; z-index: 100;
+            position: sticky; top: 0; z-index: 101;
         }
         .btn-download {
             color: #fff; text-decoration: none; font-weight: bold;
@@ -110,6 +131,7 @@
 
         @media print {
             .no-print { display: none; }
+            .outside-id-badge { top: -45px; } 
         }
     </style>
 </head>
@@ -123,6 +145,11 @@
 </div>
 
 <div class="container">
+
+    <!-- FLOATING ID BADGE (Corrected to DL NO) -->
+    <div class="outside-id-badge">
+        DL NO: {{ entry.paper_number }}
+    </div>
 
     <!-- HEADER -->
     <table class="header-table">
@@ -147,8 +174,8 @@
         <table class="table-fixed">
             <tr>
                 <td>
-                    <span class="meta-label">Delivery Note No.</span>
-                    <span class="meta-value">{{ entry.paper_number }}</span>
+                    <span class="meta-label">Status</span>
+                    <span class="meta-value uppercase">Official Release</span>
                 </td>
                 <td>
                     <span class="meta-label">Delivery Date</span>
@@ -159,8 +186,8 @@
                     <span class="meta-value">{{ entry.reference_number|default:"N/A" }}</span>
                 </td>
                 <td class="text-right">
-                    <span class="meta-label">Status</span>
-                    <span class="meta-value uppercase">Pending Confirmation</span>
+                    <span class="meta-label">Confirmation</span>
+                    <span class="meta-value uppercase">Pending Signature</span>
                 </td>
             </tr>
         </table>

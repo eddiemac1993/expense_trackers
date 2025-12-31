@@ -36,6 +36,30 @@
             position: relative;
         }
 
+        /* High-Visibility Identification Badge - Borderless, Transparent, White Text */
+        .outside-id-badge {
+            position: absolute;
+            top: 10px; /* High on top */
+            right: 50px;
+            background-color: transparent; /* No color background */
+            color: #ffffff; /* White text */
+            padding: 10px 0;
+            font-weight: 800;
+            font-size: 14px;
+            z-index: 100;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Monospaced font for the ID number */
+        .id-number {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.2em;
+            margin-left: 5px;
+            color: #ffffff;
+            border-radius: 2px;
+        }
+
         /* Accent Elements */
         .accent-bar {
             height: 120px;
@@ -159,6 +183,11 @@
 </div>
 
 <div class="page-wrapper">
+    <!-- FLOATING ID BADGE -->
+    <div class="outside-id-badge">
+        INV NO: <span class="id-number">{{ entry.paper_number }}</span>
+    </div>
+
     <div class="accent-bar"></div>
 
     <div class="content">
@@ -207,17 +236,18 @@
             <tr>
                 <td style="padding-right: 50px;">
                     <div class="heading-small">From: Service Provider</div>
-                    <div class="bold" style="font-size: 13px; color: #0f172a;">{{ entry.company.name }}</div>
+                    <div style="font-weight: bold; font-size: 13px; color: #0f172a;">{{ entry.company.name }}</div>
                     <div style="margin-top: 5px;">
                         {{ entry.company.address|linebreaksbr }}<br>
-                        <span class="bold">T:</span> {{ entry.company.phone }}<br>
-                        <span class="bold">E:</span> {{ entry.company.email }}
+                        <span style="font-weight: bold;">T:</span> {{ entry.company.phone }}<br>
+                        <span style="font-weight: bold;">E:</span> {{ entry.company.email }}
                     </div>
                 </td>
                 <td>
                     <div class="heading-small">Billed To: Client</div>
-                    <div class="bold" style="font-size: 13px; color: #0f172a;">{{ entry.client.name }}</div>
+                    <div style="font-weight: bold; font-size: 13px; color: #0f172a;">{{ entry.client.name }}</div>
                     <div style="margin-top: 5px;">
+                        {{ entry.client.address|default:"As per Customer Account"|linebreaksbr }}
                     </div>
                 </td>
             </tr>
@@ -258,10 +288,10 @@
                         <div class="heading-small">Payment & Bank Information</div>
                         <div style="font-size: 9px; color: #64748b; margin-bottom: 15px;">
                             • Please settle the balance on or before the due date.<br>
-                            • Use Invoice No. <span class="bold">#{{ entry.paper_number }}</span> as payment reference.
+                            • Use Invoice No. <span style="font-weight: bold;">#{{ entry.paper_number }}</span> as payment reference.
                         </div>
                         <div style="background-color: #f8fafc; padding: 12px; border-radius: 4px; font-size: 9px; border: 1px dashed #cbd5e1;">
-                            <span class="bold" style="color: #0f172a;">Banking Details:</span><br>
+                            <span style="font-weight: bold; color: #0f172a;">Banking Details:</span><br>
                             {% if entry.company.bank_details %}
                                 {{ entry.company.bank_details|linebreaksbr }}
                             {% else %}
@@ -302,12 +332,12 @@
                 <td style="padding-right: 80px;">
                     <div class="signature-box"></div>
                     <span class="label">Authorized Signatory</span>
-                    <div class="bold" style="color: #0f172a;">{{ entry.prepared_by|default:entry.company.name }}</div>
+                    <div style="font-weight: bold; color: #0f172a;">{{ entry.prepared_by|default:entry.company.name }}</div>
                 </td>
                 <td>
                     <div class="signature-box"></div>
                     <span class="label">Customer Acceptance</span>
-                    <div class="bold" style="color: #0f172a;">{{ entry.client.name }}</div>
+                    <div style="font-weight: bold; color: #0f172a;">{{ entry.client.name }}</div>
                 </td>
             </tr>
         </table>

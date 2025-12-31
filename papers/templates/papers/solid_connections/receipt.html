@@ -37,6 +37,30 @@
             position: relative;
         }
 
+        /* High-Visibility Identification Badge - Borderless, Transparent, White Text */
+        .outside-id-badge {
+            position: absolute;
+            top: 5px; /* High on top */
+            right: 50px;
+            background-color: transparent; /* No color background */
+            color: #ffffff; /* White text */
+            padding: 10px 0;
+            font-weight: 800;
+            font-size: 14px;
+            z-index: 100;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Monospaced font for the ID number */
+        .id-number {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.2em;
+            margin-left: 5px;
+            color: #ffffff;
+            border-radius: 2px;
+        }
+
         /* Accent Elements */
         .accent-bar {
             height: 120px;
@@ -174,6 +198,11 @@
 </div>
 
 <div class="page-wrapper">
+    <!-- FLOATING ID BADGE -->
+    <div class="outside-id-badge">
+        RC NO: <span class="id-number">{{ entry.paper_number }}</span>
+    </div>
+
     <div class="accent-bar"></div>
 
     <div class="content">
@@ -232,7 +261,7 @@
             </span>
 
             <div class="payment-grid">
-                <span class="bold">Payment Method:</span> &nbsp;&nbsp;
+                <span style="font-weight: bold;">Payment Method:</span> &nbsp;&nbsp;
                 <span class="checkbox"></span> Cash &nbsp;&nbsp;&nbsp;
                 <span class="checkbox"></span> Cheque &nbsp;&nbsp;&nbsp;
                 <span class="checkbox"></span> Bank Transfer &nbsp;&nbsp;&nbsp;
@@ -250,13 +279,13 @@
                 <td style="padding-right: 80px;">
                     <div style="margin-top: 10px; font-size: 9px; line-height: 1.6;">
                         <strong>Note:</strong> This receipt is only valid upon successful clearance of funds. 
-                        Payments made via bank transfer should be accompanied by the reference number <span class="bold">#{{ entry.paper_number }}</span>.
+                        Payments made via bank transfer should be accompanied by the reference number <span style="font-weight: bold;">#{{ entry.paper_number }}</span>.
                     </div>
                 </td>
                 <td>
                     <div class="signature-box"></div>
                     <span class="label">Authorized Signature & Stamp</span>
-                    <div class="bold" style="color: #0f172a;">{{ entry.prepared_by|default:entry.company.name }}</div>
+                    <div style="font-weight: bold; color: #0f172a;">{{ entry.prepared_by|default:entry.company.name }}</div>
                 </td>
             </tr>
         </table>

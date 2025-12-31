@@ -1,82 +1,130 @@
 {% load humanize %}
 {% load number_words %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Receipt | {{ entry.company.name }}</title>
 
 <style>
-body {
-    font-family: Calibri, Arial, sans-serif;
-    font-size: 12.5px;
-    color: #000;
-}
+    /* PDF Page Configuration */
+    @page {
+        size: A4;
+        margin: 20mm 15mm 20mm 15mm;
+    }
 
-.header-table, .info-table, .amount-table, .signature-table {
-    width: 100%;
-    border-collapse: collapse;
-}
+    body {
+        font-family: Calibri, Arial, sans-serif;
+        font-size: 12.5px;
+        color: #000;
+        margin: 0;
+        padding: 0;
+        position: relative; /* Essential for absolute positioning of the badge */
+    }
 
-.header-table td {
-    vertical-align: top;
-}
+    .container {
+        width: 100%;
+        position: relative;
+    }
 
-.company-name {
-    font-size: 18px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
+    /* Formal "Outside Boundary" Identification Styling - No Border */
+    .outside-id-badge {
+        position: absolute;
+        top: -45px;
+        right: 0;
+        font-size: 18px;
+        font-weight: bold;
+        color: #000;
+        padding: 5px 0;
+        background-color: #fff;
+        z-index: 100;
+        text-transform: uppercase;
+    }
 
-.logo img {
-    max-height: 70px;
-    float: right;
-}
+    .header-table, .info-table, .amount-table, .signature-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
 
-.section-title {
-    font-weight: bold;
-    margin: 15px 0 5px;
-    border-bottom: 1px solid #000;
-    padding-bottom: 3px;
-}
+    .header-table td {
+        vertical-align: top;
+    }
 
-.info-table td {
-    width: 50%;
-    padding: 4px;
-}
+    .company-name {
+        font-size: 22px;
+        font-weight: bold;
+        text-transform: uppercase;
+        line-height: 1;
+    }
 
-.amount-table td {
-    border: 1px solid #000;
-    padding: 8px;
-    font-size: 14px;
-}
+    .header-details {
+        font-size: 11.5px;
+        margin-top: 5px;
+    }
 
-.signature-table {
-    margin-top: 60px;
-    text-align: center;
-}
+    .logo img {
+        max-height: 70px;
+        float: right;
+    }
 
-.signature-line {
-    border-top: 1px solid #000;
-    padding-top: 5px;
-    margin-top: 40px;
-}
+    .section-title {
+        font-weight: bold;
+        font-size: 14px;
+        margin: 20px 0 5px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 3px;
+        text-transform: uppercase;
+    }
 
-.no-print {
-    text-align: right;
-    margin-bottom: 10px;
-}
+    .info-table td {
+        width: 50%;
+        padding: 8px 4px;
+        vertical-align: top;
+    }
 
-.no-print a {
-    padding: 6px 12px;
-    background: #0f2a44;
-    color: #fff;
-    text-decoration: none;
-}
+    .amount-table td {
+        border: 1px solid #000;
+        padding: 10px 8px;
+        font-size: 13px;
+    }
 
-@media print {
-    .no-print { display: none; }
-}
+    .signature-table {
+        margin-top: 80px;
+        text-align: center;
+    }
+
+    .signature-table td {
+        width: 33%;
+        padding: 0 10px;
+    }
+
+    .signature-line {
+        border-top: 1px solid #000;
+        padding-top: 5px;
+        margin-top: 40px;
+        font-size: 11px;
+        font-weight: bold;
+    }
+
+    .no-print {
+        text-align: right;
+        margin-bottom: 20px;
+    }
+
+    .no-print a {
+        padding: 8px 16px;
+        background: #0f2a44;
+        color: #fff;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 11px;
+        border-radius: 2px;
+    }
+
+    @media print {
+        .no-print { display: none; }
+        .outside-id-badge { top: -45px; }
+    }
 </style>
 </head>
 
@@ -86,8 +134,13 @@ body {
 <!-- DOWNLOAD PDF -->
 <div class="no-print">
     <a href="{% url 'paper_pdf' entry.id 'receipt' %}" target="_blank">
-        Download PDF
+        DOWNLOAD PDF
     </a>
+</div>
+
+<!-- FORMAL FLOATING ID BADGE -->
+<div class="outside-id-badge">
+    RC NO: {{ entry.paper_number }}
 </div>
 
 <!-- HEADER -->
@@ -95,9 +148,11 @@ body {
 <tr>
     <td>
         <div class="company-name">{{ entry.company.name }}</div>
-        {{ entry.company.address }}<br>
-        {{ entry.company.phone }}<br>
-        {{ entry.company.email }}
+        <div class="header-details">
+            {{ entry.company.address|linebreaksbr }}<br>
+            <strong>Tel:</strong> {{ entry.company.phone }}<br>
+            <strong>Email:</strong> {{ entry.company.email }}
+        </div>
     </td>
     <td class="logo">
         {% if entry.company.logo %}
@@ -118,12 +173,12 @@ body {
 <tr>
     <td>
         <strong>Receipt No:</strong> {{ entry.paper_number }}<br>
-        <strong>Date:</strong> {{ entry.date|date:"d M Y" }}
+        <strong>Date of Issue:</strong> {{ entry.date|date:"d M Y" }}
     </td>
     <td>
         <strong>Received From:</strong><br>
-        {{ entry.client.name }}<br>
-        {{ entry.client.phone }}
+        <span style="font-size: 14px; font-weight: bold;">{{ entry.client.name }}</span><br>
+        
     </td>
 </tr>
 </table>
@@ -131,22 +186,22 @@ body {
 <!-- AMOUNT -->
 <table class="amount-table">
 <tr>
-    <td><strong>Amount Received</strong></td>
-    <td><strong>ZMW {{ entry.total|floatformat:2|intcomma }}</strong></td>
+    <td width="30%"><strong>Amount Received</strong></td>
+    <td><strong style="font-size: 16px;">ZMW {{ entry.total|floatformat:2|intcomma }}</strong></td>
 </tr>
 <tr>
     <td><strong>Amount in Words</strong></td>
     <td>
-        <em>{{ entry.total|amount_in_words }}</em>
+        <em style="text-transform: capitalize; font-weight: bold;">{{ entry.total|amount_in_words }} Only</em>
     </td>
 </tr>
 <tr>
     <td>Payment Method</td>
-    <td>Cash / Bank Transfer / Mobile Money</td>
+    <td>Cash / Bank Transfer / Mobile Money / Cheque</td>
 </tr>
 <tr>
-    <td>Reference</td>
-    <td>________________________</td>
+    <td>Transaction Reference</td>
+    <td>________________________________________________</td>
 </tr>
 </table>
 
@@ -154,16 +209,20 @@ body {
 <table class="signature-table">
 <tr>
     <td>
-        <div class="signature-line">Received By</div>
+        <div class="signature-line">Prepared By</div>
     </td>
     <td>
-        <div class="signature-line">Signature</div>
+        <div class="signature-line">Authorized Signature & Stamp</div>
     </td>
     <td>
         <div class="signature-line">Date</div>
     </td>
 </tr>
 </table>
+
+<div style="margin-top: 30px; font-size: 10px; color: #666; font-style: italic;">
+    Note: This is an official receipt. All payments are subject to fund clearance.
+</div>
 
 </div>
 </body>

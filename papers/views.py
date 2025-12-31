@@ -51,15 +51,32 @@ def paper_list(request):
 
 def paper_preview(request, entry_id, paper_type):
     entry = get_object_or_404(PaperEntry, id=entry_id)
+
+    # Extract numeric sequence
+    raw_sequence = entry.paper_number.split("/")[-1]
+
+    # Convert and apply offset
+    display_sequence = int(raw_sequence) + 99
+
+    # Override for display only
+    entry.paper_number = f"{display_sequence:04d}"
+
     template = f"papers/{entry.company.slug}/{paper_type}.html"
     return render(request, template, {"entry": entry})
 
 
+
 def paper_pdf(request, entry_id, paper_type):
-    """
-    Render a paper (quotation, invoice, etc.) as a PDF using WeasyPrint
-    """
     entry = get_object_or_404(PaperEntry, id=entry_id)
+
+    # 1. Extract internal sequence (0003)
+    raw_sequence = entry.paper_number.split("/")[-1]
+
+    # 2. Apply offset so display starts at 100
+    display_sequence = int(raw_sequence) + 99
+
+    # 3. Override ONLY for display inside PDF
+    entry.paper_number = f"{display_sequence:04d}"
 
     template_path = f"papers/{entry.company.slug}/{paper_type}.html"
     template = get_template(template_path)
@@ -70,12 +87,11 @@ def paper_pdf(request, entry_id, paper_type):
         "is_pdf": True,
     })
 
-
     font_config = FontConfiguration()
 
     html = HTML(
         string=html_string,
-        base_url='/',                 # important
+        base_url=request.build_absolute_uri('/'),  # ✅ FIXED
     )
 
     pdf = html.write_pdf(
@@ -83,9 +99,9 @@ def paper_pdf(request, entry_id, paper_type):
         presentational_hints=True
     )
 
-    filename = f"{paper_type}_{entry.paper_number or entry.id}.pdf"
+    # 4. CLEAN DOWNLOAD NAME (this is the key)
+    filename = f"{paper_type}_{entry.company.slug.upper()}_{display_sequence:04d}.pdf"
 
     response = HttpResponse(pdf, content_type='application/pdf')
-    response['Content-Disposition'] = f'inline; filename="{filename}"'
-
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response

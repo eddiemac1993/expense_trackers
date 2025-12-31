@@ -1,132 +1,172 @@
 {% load humanize %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Invoice | {{ entry.company.name }}</title>
 
 <style>
-body {
-    font-family: Calibri, Arial, sans-serif;
-    font-size: 12.5px;
-    color: #000;
-}
+    /* PDF Page Configuration */
+    @page {
+        size: A4;
+        margin: 20mm 15mm 20mm 15mm;
+    }
 
-.container {
-    width: 100%;
-}
+    body {
+        font-family: Calibri, Arial, sans-serif;
+        font-size: 12.5px;
+        color: #000;
+        margin: 0;
+        padding: 0;
+        position: relative; /* Essential for absolute positioning of the badge */
+    }
 
-/* Header */
-.header-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 15px;
-}
-.header-table td {
-    vertical-align: top;
-}
-.company-name {
-    font-size: 18px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-.header-details {
-    font-size: 11.5px;
-}
-.logo img {
-    max-height: 70px;
-    float: right;
-}
+    .container {
+        width: 100%;
+        position: relative;
+    }
 
-/* Titles */
-.section-title {
-    font-weight: bold;
-    margin: 12px 0 5px;
-    border-bottom: 1px solid #000;
-    padding-bottom: 3px;
-}
+    /* Formal "Outside Boundary" Identification Styling - No Border */
+    .outside-id-badge {
+        position: absolute;
+        top: -45px;
+        right: 0;
+        font-size: 18px;
+        font-weight: bold;
+        color: #000;
+        padding: 5px 0;
+        background-color: #fff;
+        z-index: 100;
+        text-transform: uppercase;
+    }
 
-/* Info table */
-.info-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 15px;
-}
-.info-table td {
-    width: 50%;
-    vertical-align: top;
-    padding: 4px;
-}
+    /* Header */
+    .header-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+    .header-table td {
+        vertical-align: top;
+    }
+    .company-name {
+        font-size: 22px;
+        font-weight: bold;
+        text-transform: uppercase;
+        line-height: 1;
+    }
+    .header-details {
+        font-size: 11.5px;
+        margin-top: 5px;
+    }
+    .logo img {
+        max-height: 70px;
+        float: right;
+    }
 
-/* Items */
-.items-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.items-table th,
-.items-table td {
-    border: 1px solid #000;
-    padding: 6px;
-}
-.items-table th {
-    background: #f2f2f2;
-}
+    /* Titles */
+    .section-title {
+        font-weight: bold;
+        font-size: 14px;
+        margin: 20px 0 5px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 3px;
+        text-transform: uppercase;
+    }
 
-/* Totals */
-.totals-table {
-    width: 40%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    float: right;
-}
-.totals-table td {
-    border: 1px solid #000;
-    padding: 6px;
-}
+    /* Info table */
+    .info-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+    .info-table td {
+        width: 50%;
+        vertical-align: top;
+        padding: 8px 4px;
+    }
 
-/* Bank details */
-.bank-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-.bank-table td {
-    border: 1px solid #000;
-    padding: 6px;
-}
+    /* Items */
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    .items-table th,
+    .items-table td {
+        border: 1px solid #000;
+        padding: 8px 6px;
+    }
+    .items-table th {
+        background: #f2f2f2;
+        text-align: left;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+    }
 
-/* Signatures */
-.signature-table {
-    width: 100%;
-    margin-top: 60px;
-    border-collapse: collapse;
-    text-align: center;
-}
-.signature-table td {
-    width: 33%;
-}
-.signature-line {
-    margin-top: 40px;
-    border-top: 1px solid #000;
-    padding-top: 5px;
-}
+    /* Totals */
+    .totals-table {
+        width: 45%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        float: right;
+    }
+    .totals-table td {
+        border: 1px solid #000;
+        padding: 8px;
+    }
 
-.right { text-align: right; }
+    /* Bank details */
+    .bank-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    .bank-table td {
+        border: 1px solid #000;
+        padding: 8px 6px;
+    }
 
-.no-print {
-    text-align: right;
-    margin-bottom: 10px;
-}
-.no-print a {
-    padding: 6px 12px;
-    background: #0f2a44;
-    color: #fff;
-    text-decoration: none;
-}
+    /* Signatures */
+    .signature-table {
+        width: 100%;
+        margin-top: 80px;
+        border-collapse: collapse;
+        text-align: center;
+    }
+    .signature-table td {
+        width: 33%;
+        padding: 0 10px;
+    }
+    .signature-line {
+        margin-top: 40px;
+        border-top: 1px solid #000;
+        padding-top: 5px;
+        font-size: 11px;
+        font-weight: bold;
+    }
 
-@media print {
-    .no-print { display: none; }
-}
+    .right { text-align: right; }
+
+    .no-print {
+        text-align: right;
+        margin-bottom: 20px;
+    }
+    .no-print a {
+        padding: 8px 16px;
+        background: #0f2a44;
+        color: #fff;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 11px;
+        border-radius: 2px;
+    }
+
+    @media print {
+        .no-print { display: none; }
+        .outside-id-badge { top: -45px; }
+    }
 </style>
 </head>
 
@@ -135,8 +175,13 @@ body {
 
 <div class="no-print">
     <a href="{% url 'paper_pdf' entry.id 'invoice' %}" target="_blank">
-        Download PDF
+        DOWNLOAD PDF
     </a>
+</div>
+
+<!-- FORMAL FLOATING ID BADGE -->
+<div class="outside-id-badge">
+    INV NO: {{ entry.paper_number }}
 </div>
 
 <!-- HEADER -->
@@ -145,9 +190,7 @@ body {
     <td>
         <div class="company-name">{{ entry.company.name }}</div>
         <div class="header-details">
-            {{ entry.company.address }}<br>
-            {{ entry.company.phone }}<br>
-            {{ entry.company.email }}
+            {{ entry.company.address|linebreaksbr }}<br>
         </div>
     </td>
     <td class="logo">
@@ -173,9 +216,7 @@ body {
     </td>
     <td>
         <strong>Bill To:</strong><br>
-        {{ entry.client.name }}<br>
-        {{ entry.client.phone }}<br>
-        {{ entry.client.email }}
+        <span style="font-size: 14px; font-weight: bold;">{{ entry.client.name }}</span><br>
     </td>
 </tr>
 </table>
@@ -186,9 +227,9 @@ body {
 <tr>
     <th style="width:5%">#</th>
     <th>Description</th>
-    <th style="width:10%">Qty</th>
-    <th style="width:15%">Unit Rate</th>
-    <th style="width:15%">Amount</th>
+    <th style="width:10%" class="right">Qty</th>
+    <th style="width:15%" class="right">Unit Rate</th>
+    <th style="width:15%" class="right">Amount</th>
 </tr>
 </thead>
 <tbody>
@@ -207,7 +248,7 @@ body {
 <!-- TOTALS -->
 <table class="totals-table">
 <tr>
-    <td>SUBTOTAL</td>
+    <td>SUBTOTAL (ZMW)</td>
     <td class="right">{{ entry.subtotal|floatformat:2|intcomma }}</td>
 </tr>
 <tr>
@@ -215,7 +256,7 @@ body {
     <td class="right">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
 </tr>
 <tr>
-    <td><strong>GRAND TOTAL</strong></td>
+    <td><strong>GRAND TOTAL (ZMW)</strong></td>
     <td class="right"><strong>{{ entry.total|floatformat:2|intcomma }}</strong></td>
 </tr>
 </table>
@@ -227,8 +268,8 @@ body {
 
 <table class="bank-table">
 <tr>
-    <td><strong>Bank Name</strong></td>
-    <td>lndo Zambia Bank </td>
+    <td width="30%"><strong>Bank Name</strong></td>
+    <td>Indo Zambia Bank </td>
 </tr>
 <tr>
     <td><strong>Account Name</strong></td>
@@ -244,7 +285,7 @@ body {
 </tr>
 <tr>
     <td><strong>Swift Code</strong></td>
-    <td>INZAZMLX  </td>
+    <td>INZAZMLX</td>
 </tr>
 </table>
 
@@ -252,7 +293,7 @@ body {
 <table class="signature-table">
 <tr>
     <td><div class="signature-line">Prepared By</div></td>
-    <td><div class="signature-line">Authorised Signature</div></td>
+    <td><div class="signature-line">Authorized Signature</div></td>
     <td><div class="signature-line">Date</div></td>
 </tr>
 </table>

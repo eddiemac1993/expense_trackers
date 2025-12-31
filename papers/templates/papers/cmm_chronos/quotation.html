@@ -1,229 +1,273 @@
 {% load humanize %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Quotation | {{ entry.company.name }}</title>
+    <meta charset="utf-8">
+    <title>Quotation | {{ entry.company.name }}</title>
 
-<style>
-body {
-    font-family: Calibri, Arial, sans-serif;
-    font-size: 12.5px;
-    color: #000;
-}
+    <style>
+        /* PDF Page Configuration */
+        @page {
+            size: A4;
+            margin: 20mm 15mm 20mm 15mm;
+        }
 
-.container {
-    width: 100%;
-}
+        body {
+            font-family: Calibri, 'Trebuchet MS', Arial, sans-serif;
+            font-size: 12.5px;
+            color: #000;
+            margin: 0;
+            padding: 0;
+            position: relative;
+        }
 
-/* Header table */
-.header-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 15px;
-}
+        .container {
+            width: 100%;
+            position: relative;
+        }
 
-.header-table td {
-    vertical-align: top;
-}
+        /* Formal "Outside Boundary" Identification Styling - Border Removed */
+        .outside-id-badge {
+            position: absolute;
+            top: -45px;
+            right: 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #000;
+            padding: 5px 0; /* Adjusted padding since there is no border */
+            background-color: #fff;
+            z-index: 100;
+        }
 
-.company-name {
-    font-size: 18px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
+        /* Header table */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
 
-.header-details {
-    font-size: 11.5px;
-}
+        .header-table td {
+            vertical-align: top;
+        }
 
-.logo img {
-    max-height: 70px;
-    float: right;
-}
+        .company-name {
+            font-size: 22px;
+            font-weight: bold;
+            text-transform: uppercase;
+            line-height: 1;
+        }
 
-/* Section titles */
-.section-title {
-    font-weight: bold;
-    margin: 12px 0 5px;
-    border-bottom: 1px solid #000;
-    padding-bottom: 3px;
-}
+        .header-details {
+            font-size: 11.5px;
+            margin-top: 5px;
+        }
 
-/* Info table */
-.info-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 15px;
-}
+        .logo img {
+            max-height: 70px;
+            float: right;
+        }
 
-.info-table td {
-    width: 50%;
-    vertical-align: top;
-    padding: 4px;
-}
+        /* Section titles */
+        .section-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin: 20px 0 5px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 3px;
+            text-transform: uppercase;
+        }
 
-/* Items table */
-.items-table {
-    width: 100%;
-    border-collapse: collapse;
-}
+        /* Info table */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
 
-.items-table th,
-.items-table td {
-    border: 1px solid #000;
-    padding: 6px;
-}
+        .info-table td {
+            width: 50%;
+            vertical-align: top;
+            padding: 8px 4px;
+        }
 
-.items-table th {
-    background: #f2f2f2;
-    text-align: left;
-}
+        /* Items table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
 
-.right {
-    text-align: right;
-}
+        .items-table th,
+        .items-table td {
+            border: 1px solid #000;
+            padding: 8px 6px;
+        }
 
-/* Totals */
-.totals-table {
-    width: 40%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    float: right;
-}
+        .items-table th {
+            background: #f2f2f2;
+            text-align: left;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
 
-.totals-table td {
-    border: 1px solid #000;
-    padding: 6px;
-}
+        .right {
+            text-align: right;
+        }
 
-/* Signatures */
-.signature-table {
-    width: 100%;
-    margin-top: 60px;
-    border-collapse: collapse;
-    text-align: center;
-}
+        /* Totals */
+        .totals-table {
+            width: 45%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            float: right;
+        }
 
-.signature-table td {
-    width: 33%;
-}
+        .totals-table td {
+            border: 1px solid #000;
+            padding: 8px;
+        }
 
-.signature-line {
-    margin-top: 40px;
-    border-top: 1px solid #000;
-    padding-top: 5px;
-}
+        /* Signatures */
+        .signature-table {
+            width: 100%;
+            margin-top: 80px;
+            border-collapse: collapse;
+            text-align: center;
+        }
 
-.no-print {
-    text-align: right;
-    margin-bottom: 10px;
-}
+        .signature-table td {
+            width: 33%;
+            padding: 0 10px;
+        }
 
-.no-print a {
-    padding: 6px 12px;
-    background: #0f2a44;
-    color: #fff;
-    text-decoration: none;
-}
+        .signature-line {
+            margin-top: 40px;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            font-size: 11px;
+            font-weight: bold;
+        }
 
-@media print {
-    .no-print { display: none; }
-}
-</style>
+        .no-print {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .no-print a {
+            padding: 8px 16px;
+            background: #0f2a44;
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 11px;
+            border-radius: 2px;
+        }
+
+        @media print {
+            .no-print { display: none; }
+            .outside-id-badge { top: -45px; }
+        }
+    </style>
 </head>
 
 <body>
 <div class="container">
 
-<div class="no-print">
-    <a href="{% url 'paper_pdf' entry.id 'quotation' %}" target="_blank">
-        Download PDF
-    </a>
-</div>
+    <div class="no-print">
+        <a href="{% url 'paper_pdf' entry.id 'quotation' %}" target="_blank">
+            DOWNLOAD PDF
+        </a>
+    </div>
 
-<table class="header-table">
-<tr>
-    <td>
-        <div class="company-name">{{ entry.company.name }}</div>
-        <div class="header-details">
-            {{ entry.company.address }}<br>
-            {{ entry.company.phone }}<br>
-            {{ entry.company.email }}
-        </div>
-    </td>
-    <td class="logo">
-        {% if entry.company.logo %}
-            {% if is_pdf %}
-                <img src="file://{{ entry.company.logo.path }}">
-            {% else %}
-                <img src="{{ entry.company.logo.url }}">
-            {% endif %}
-        {% endif %}
-    </td>
-</tr>
-</table>
+    <!-- FORMAL FLOATING ID BADGE -->
+    <div class="outside-id-badge">
+        QT NO: {{ entry.paper_number }}
+    </div>
 
-<div class="section-title">QUOTATION DETAILS</div>
+    <table class="header-table">
+        <tr>
+            <td>
+                <div class="company-name">{{ entry.company.name }}</div>
+                <div class="header-details">
+                    {{ entry.company.address|linebreaksbr }}<br>
+                </div>
+            </td>
+            <td class="logo">
+                {% if entry.company.logo %}
+                    {% if is_pdf %}
+                        <img src="file://{{ entry.company.logo.path }}">
+                    {% else %}
+                        <img src="{{ entry.company.logo.url }}">
+                    {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+    </table>
 
-<table class="info-table">
-<tr>
-    <td>
-        <strong>Quotation No:</strong> {{ entry.paper_number }}<br>
-        <strong>Date:</strong> {{ entry.date|date:"d M Y" }}
-    </td>
-    <td>
-        <strong>Client:</strong><br>
-        {{ entry.client.name }}<br>
-    </td>
-</tr>
-</table>
+    <div class="section-title">Quotation Details</div>
 
-<table class="items-table">
-<thead>
-<tr>
-    <th style="width:5%">#</th>
-    <th>Description</th>
-    <th style="width:10%">Qty</th>
-    <th style="width:15%">Unit Rate</th>
-    <th style="width:15%">Line Total</th>
-</tr>
-</thead>
-<tbody>
-{% for item in entry.items.all %}
-<tr>
-    <td>{{ forloop.counter }}</td>
-    <td>{{ item.description }}</td>
-    <td class="right">{{ item.quantity|floatformat:2 }}</td>
-    <td class="right">{{ item.unit_price|floatformat:2|intcomma }}</td>
-    <td class="right">{{ item.amount|floatformat:2|intcomma }}</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
+    <table class="info-table">
+        <tr>
+            <td>
+                <strong>Quotation No:</strong> {{ entry.paper_number }}<br>
+                <strong>Date:</strong> {{ entry.date|date:"d M Y" }}
+            </td>
+            <td>
+                <strong>Client:</strong><br>
+                <span style="font-size: 14px; font-weight: bold;">{{ entry.client.name }}</span><br>
+                {{ entry.client.address|linebreaksbr }}
+            </td>
+        </tr>
+    </table>
 
-<table class="totals-table">
-<tr>
-    <td>SUBTOTAL</td>
-    <td class="right">{{ entry.subtotal|floatformat:2|intcomma }}</td>
-</tr>
-<tr>
-    <td>TAX ({{ entry.tax_percentage }}%)</td>
-    <td class="right">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
-</tr>
-<tr>
-    <td><strong>GRAND TOTAL</strong></td>
-    <td class="right"><strong>{{ entry.total|floatformat:2|intcomma }}</strong></td>
-</tr>
-</table>
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width:5%">#</th>
+                <th>Description</th>
+                <th style="width:10%" class="right">Qty</th>
+                <th style="width:15%" class="right">Unit Rate</th>
+                <th style="width:15%" class="right">Line Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in entry.items.all %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.description }}</td>
+                <td class="right">{{ item.quantity|floatformat:0 }}</td>
+                <td class="right">{{ item.unit_price|floatformat:2|intcomma }}</td>
+                <td class="right">{{ item.amount|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-<table class="signature-table">
-<tr>
-    <td><div class="signature-line">Prepared By</div></td>
-    <td><div class="signature-line">Signature</div></td>
-    <td><div class="signature-line">Date</div></td>
-</tr>
-</table>
+    <table class="totals-table">
+        <tr>
+            <td>SUBTOTAL (ZMW)</td>
+            <td class="right">{{ entry.subtotal|floatformat:2|intcomma }}</td>
+        </tr>
+        <tr>
+            <td>TAX ({{ entry.tax_percentage }}%)</td>
+            <td class="right">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
+        </tr>
+        <tr>
+            <td><strong>GRAND TOTAL (ZMW)</strong></td>
+            <td class="right"><strong>{{ entry.total|floatformat:2|intcomma }}</strong></td>
+        </tr>
+    </table>
+
+    <div style="clear: both;"></div>
+
+    <table class="signature-table">
+        <tr>
+            <td><div class="signature-line">Prepared By</div></td>
+            <td><div class="signature-line">Authorized Signature</div></td>
+            <td><div class="signature-line">Client Acceptance / Date</div></td>
+        </tr>
+    </table>
 
 </div>
 </body>
