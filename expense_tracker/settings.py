@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'projections',
     'papers',
+    'documents',
 ]
 
 MIDDLEWARE = [
