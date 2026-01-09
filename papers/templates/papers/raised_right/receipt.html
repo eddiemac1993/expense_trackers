@@ -25,35 +25,42 @@
             color: #333;
             margin: 0;
             padding: 0;
-            position: relative; /* Essential for absolute positioning of the ID badge */
         }
 
         .container { 
             width: 100%; 
             position: relative;
-            padding-top: 10px;
+            padding-top: 10px; 
         }
 
-        /* The "Outside Boundary" Identification Styling */
-        .outside-id-badge {
-            position: absolute;
-            top: -40px; 
-            right: 0;
-            font-size: 20px;
+        /* Top Title: Clean, no border */
+        .doc-main-title {
+            text-align: center;
+            margin: 0 auto 20px auto;
+            font-size: 24px; 
             font-weight: 900;
             color: #000;
-            border: 2.5px solid #000;
-            padding: 8px 20px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        /* RC Badge: Bordered and prominent */
+        .rc-number-badge {
+            display: inline-block;
+            font-size: 16px; 
+            font-weight: 900;
+            color: #000;
+            border: 2px solid #000;
+            padding: 6px 15px;
             text-transform: uppercase;
             letter-spacing: 1px;
             background-color: #fff;
-            z-index: 100;
+            margin-bottom: 10px;
         }
 
         /* Helpers */
         .bold { font-weight: bold; }
         .text-right { text-align: right; }
-        .text-center { text-align: center; }
         .text-muted { color: #777; }
         .uppercase { text-transform: uppercase; }
 
@@ -64,8 +71,7 @@
 
         /* Header Branding */
         .header-table { margin-bottom: 30px; }
-        .logo { max-height: 80px; width: auto; }
-        .company-title { font-size: 28px; margin: 0; color: #000; letter-spacing: -1px; }
+        .logo { max-height: 70px; width: auto; }
 
         /* Document Title Bar */
         .doc-title-bar {
@@ -85,33 +91,39 @@
             border: 1px solid #eee;
             padding: 25px;
             margin-bottom: 30px;
-            line-height: 2;
+            line-height: 2.2;
             background-color: #fdfdfd;
         }
 
         .line-item { border-bottom: 1px dotted #ccc; display: inline-block; min-width: 250px; padding: 0 10px; font-weight: bold; }
+
+        /* Stretched Amount Row */
+        .amount-row-stretched {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px dotted #ccc;
+            width: 100%;
+            margin-top: 5px;
+        }
 
         .amount-words {
             text-transform: capitalize;
             font-style: italic;
             font-weight: bold;
             color: #222;
+            letter-spacing: 0.5px;
         }
 
-        /* Amount Box */
-        .total-display {
-            margin-top: 20px;
-            background-color: #333;
-            color: #fff;
-            padding: 15px 25px;
-            display: inline-block;
-            font-size: 20px;
-            letter-spacing: 1px;
+        .amount-figure {
+            font-weight: 900;
+            border: 1px solid #333;
+            padding: 2px 12px;
+            background: #eee;
+            font-style: normal;
+            font-size: 13px;
+            margin-bottom: -1px; /* Align better with dotted border */
         }
-
-        /* Payment Checkboxes */
-        .payment-grid { margin-top: 15px; font-size: 10px; color: #555; }
-        .checkbox { display: inline-block; width: 10px; height: 10px; border: 1px solid #333; margin-right: 5px; vertical-align: middle; }
 
         /* Footer & Signatures */
         .footer-details { margin-top: 50px; font-size: 10px; }
@@ -130,7 +142,7 @@
 
         @media print {
             .no-print { display: none; }
-            .outside-id-badge { top: -45px; } 
+            .container { padding-top: 0; }
         }
     </style>
 </head>
@@ -145,12 +157,12 @@
 
 <div class="container">
 
-    <!-- FLOATING ID BADGE (Outside Table Boundaries) -->
-    <div class="outside-id-badge">
-        RC NO: {{ entry.paper_number }}
+    <!-- PRIMARY TITLE (Clean text) -->
+    <div class="doc-main-title">
+        RECEIPT
     </div>
 
-    <!-- HEADER -->
+    <!-- HEADER BRANDING -->
     <table class="header-table">
         <tr>
             <td width="50%">
@@ -159,10 +171,14 @@
                 {% endif %}
             </td>
             <td width="50%" class="text-right">
-                <h1 class="company-title">OFFICIAL RECEIPT</h1>
+                <!-- RC NUMBER (Bordered Badge) -->
+                <div class="rc-number-badge">
+                    RC NO: {{ entry.paper_number }}
+                </div>
                 <div class="text-muted">
                     <span class="bold">{{ entry.company.name }}</span><br>
                     {{ entry.company.address|linebreaksbr }}<br>
+                    <div>Tel: {{ entry.company.phone }} | Email: {{ entry.company.email }}</div>
                 </div>
             </td>
         </tr>
@@ -176,13 +192,9 @@
                     <span class="meta-label">Status</span>
                     <span class="meta-value uppercase">Payment Acknowledged</span>
                 </td>
-                <td>
-                    <span class="meta-label">Date of Payment</span>
-                    <span class="meta-value">{{ entry.date|date:"d M Y" }}</span>
-                </td>
                 <td class="text-right">
-                    <span class="meta-label">Total Received (ZMW)</span>
-                    <span class="meta-value" style="font-size: 14px;">ZMW {{ entry.total|floatformat:2|intcomma }}</span>
+                    <span class="meta-label">Date :</span>
+                    <span class="meta-value">{{ entry.date|date:"d M Y" }}</span>
                 </td>
             </tr>
         </table>
@@ -190,45 +202,32 @@
 
     <!-- RECEIPT CONTENT -->
     <div class="receipt-content">
-        Received with thanks from: <br>
+        Customer: <br>
         <span class="line-item" style="font-size: 14px; width: 100%;">{{ entry.client.name }}</span>
         <br><br>
 
         The sum of: <br>
-        <span class="amount-words" style="border-bottom: 1px dotted #333; padding-right: 50px;">
-            {{ entry.total|amount_in_words }} Only
-        </span>
-        <br><br>
+        <div class="amount-row-stretched">
+            <span class="amount-words">
+                {{ entry.total|amount_in_words }} Only
+            </span>
+            <span class="amount-figure">
+                ZMW {{ entry.total|floatformat:2|intcomma }}
+            </span>
+        </div>
+        <br>
 
         Being payment for: <br>
         <span class="line-item" style="width: 100%;">
             {{ entry.items.all.0.description }}{% if entry.items.all.count > 1 %} and other items{% endif %}
             (Ref: {{ entry.reference_number|default:entry.paper_number }})
         </span>
-        <br><br>
-
-        <div class="payment-grid">
-            <span class="bold uppercase" style="margin-right: 15px;">Method:</span>
-            <span class="checkbox"></span> Cash &nbsp;&nbsp;
-            <span class="checkbox"></span> Cheque &nbsp;&nbsp;
-            <span class="checkbox"></span> Bank Transfer &nbsp;&nbsp;
-            <span class="checkbox"></span> Mobile Money
-        </div>
-
-        <div class="total-display">
-            ZMW {{ entry.total|floatformat:2|intcomma }}
-        </div>
     </div>
 
     <!-- SIGNATURES -->
     <div class="footer-details">
         <table class="table-fixed">
             <tr>
-                <td width="50%">
-                    <div style="font-size: 9px; color: #666; margin-top: 45px;">
-                        <em>This is a computer generated receipt and is valid only upon successful clearance of funds.</em>
-                    </div>
-                </td>
                 <td width="50%">
                     <div class="signature-space" style="margin-left: auto;">
                         <span class="bold">{{ entry.prepared_by|default:entry.company.name }}</span><br>

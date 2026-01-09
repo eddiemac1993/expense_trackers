@@ -42,7 +42,7 @@ def projection_dashboard(request):
             messages.error(request, "Invalid project date.")
             return redirect("projections:dashboardpro")
 
-        # Create project record
+        # Create project record (SAFE WITH DEFAULT)
         ProjectRecord.objects.create(
             title=request.POST.get("title"),
             description=request.POST.get("description"),
@@ -51,6 +51,10 @@ def projection_dashboard(request):
             amount=request.POST.get("amount"),
             project_date=project_date,
             status=request.POST.get("status"),
+            completion_status=request.POST.get(
+                "completion_status",
+                "PENDING_EVALUATION"
+            ),
         )
 
         messages.success(request, "Project record added successfully.")
@@ -84,9 +88,12 @@ def projection_dashboard(request):
         .order_by("-year")
     )
 
-    # Filters
+    # =========================
+    # FILTERS (FIXED)
+    # =========================
     company = request.GET.get("company")
     status = request.GET.get("status")
+    completion_status = request.GET.get("completion_status")
     year = request.GET.get("year")
 
     if company:
@@ -94,6 +101,9 @@ def projection_dashboard(request):
 
     if status:
         records = records.filter(status=status)
+
+    if completion_status:
+        records = records.filter(completion_status=completion_status)
 
     if year:
         records = records.filter(year=year)
