@@ -8,6 +8,17 @@ from django.contrib import messages
 from .models import ProjectRecord
 
 
+from datetime import date
+from decimal import Decimal
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Sum
+from django.views.decorators.http import require_http_methods, require_POST
+from django.contrib import messages
+
+from .models import ProjectRecord
+
+
 @require_http_methods(["GET", "POST"])
 def projection_dashboard(request):
     """
@@ -23,7 +34,6 @@ def projection_dashboard(request):
         company_select = request.POST.get("company_select")
         company_new = request.POST.get("company_new", "").strip()
 
-        # Resolve company name
         if company_select == "__new__":
             if not company_new:
                 messages.error(request, "Please enter a new company name.")
@@ -35,14 +45,12 @@ def projection_dashboard(request):
                 return redirect("projections:dashboardpro")
             company_name = company_select
 
-        # Parse project date safely
         try:
             project_date = date.fromisoformat(request.POST.get("project_date"))
         except Exception:
             messages.error(request, "Invalid project date.")
             return redirect("projections:dashboardpro")
 
-        # Create project record (SAFE WITH DEFAULT)
         ProjectRecord.objects.create(
             title=request.POST.get("title"),
             description=request.POST.get("description"),
@@ -64,32 +72,33 @@ def projection_dashboard(request):
     # HANDLE DISPLAY (GET)
     # =========================
 
-    records = (
-        ProjectRecord.objects
-        .filter(is_active=True)
-        .order_by("-project_date")
+    # ALL active records (base)
+    all_records = ProjectRecord.objects.filter(is_active=True)
+
+    # Combined overall total (WON + LOST + PENDING)
+    overall_total_amount = (
+        all_records.aggregate(total=Sum("amount"))
+        .get("total") or Decimal("0.00")
     )
 
-    # Distinct companies for dropdown
+    # Records that will be filtered
+    records = all_records.order_by("-project_date")
+
+    # Dropdown data
     companies = (
-        ProjectRecord.objects
-        .filter(is_active=True)
-        .values_list("company", flat=True)
+        all_records.values_list("company", flat=True)
         .distinct()
         .order_by("company")
     )
 
-    # Available years
     years = (
-        ProjectRecord.objects
-        .filter(is_active=True)
-        .values_list("year", flat=True)
+        all_records.values_list("year", flat=True)
         .distinct()
         .order_by("-year")
     )
 
     # =========================
-    # FILTERS (FIXED)
+    # FILTERS
     # =========================
     company = request.GET.get("company")
     status = request.GET.get("status")
@@ -109,18 +118,18 @@ def projection_dashboard(request):
         records = records.filter(year=year)
 
     # =========================
-    # AGGREGATES
+    # FILTERED TOTALS
     # =========================
     total_won = (
         records.filter(status="WON")
         .aggregate(total=Sum("amount"))
-        .get("total") or 0
+        .get("total") or Decimal("0.00")
     )
 
     total_lost = (
         records.filter(status="LOST")
         .aggregate(total=Sum("amount"))
-        .get("total") or 0
+        .get("total") or Decimal("0.00")
     )
 
     company_totals = (
@@ -135,8 +144,13 @@ def projection_dashboard(request):
         "companies": companies,
         "years": years,
         "company_totals": company_totals,
+
+        # FILTERED TOTALS
         "total_won": total_won,
         "total_lost": total_lost,
+
+        # OVERALL COMBINED TOTAL
+        "overall_total_amount": overall_total_amount,
     })
 
 

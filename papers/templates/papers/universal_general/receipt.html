@@ -26,25 +26,41 @@
             position: relative;
         }
 
-        /* ===== HEADER ===== */
+        /* ===== RC NUMBER (Top Right) ===== */
+        .rc-badge {
+            position: absolute;
+            top: 30px; /* Adjusted to sit near the top right */
+            right: 0;
+            border: 2px solid #000;
+            padding: 4px 12px;
+            font-weight: bold;
+            font-size: 13px;
+            background: #fff;
+            text-transform: uppercase;
+            z-index: 10;
+        }
+
+        /* ===== HEADER (Centered) ===== */
         .header {
             width: 100%;
             border-bottom: 3px solid #000;
             margin-bottom: 12px;
             padding-top: 5px;
+            text-align: center;
         }
 
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
+        .logo-container {
+            margin-bottom: 10px;
         }
 
-        .header-table td {
-            vertical-align: top; /* Align to top to help stacking */
+        .logo-container img {
+            max-height: 28mm;
+            display: block;
+            margin: 0 auto;
         }
 
         .company-block h1 {
-            margin: 0;
+            margin: 5px 0 0 0;
             font-size: 20px;
             text-transform: uppercase;
         }
@@ -52,28 +68,6 @@
         .company-block p {
             margin: 2px 0;
             font-size: 11px;
-        }
-
-        /* ===== RECEIPT NUMBER (Stacked above Logo) ===== */
-        .rc-badge {
-            float: right;
-            border: 2px solid #000;
-            padding: 4px 12px;
-            font-weight: bold;
-            font-size: 13px;
-            background: #fff;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
-
-        .logo {
-            text-align: right;
-        }
-
-        .logo img {
-            max-height: 28mm;
-            float: right;
-            clear: both; /* Ensures logo sits below the RC Badge */
         }
 
         /* ===== TITLE BAR ===== */
@@ -84,7 +78,7 @@
             text-align: center;
             font-size: 16px;
             font-weight: bold;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
             background: #f9f9f9;
         }
 
@@ -98,7 +92,7 @@
         .info-grid td {
             border: 1px solid #000;
             padding: 8px;
-            vertical-align: top;
+            vertical-align: middle;
         }
 
         .info-grid .label {
@@ -124,7 +118,7 @@
         }
 
         .amount-box {
-            margin-top: 15px;
+            margin: 15px 0;
             display: inline-block;
             border: 2px solid #000;
             padding: 10px 20px;
@@ -135,8 +129,10 @@
 
         /* ===== PAYMENT METHOD ===== */
         .payment-methods {
-            margin-top: 10px;
+            margin-top: 15px;
             font-size: 11px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
         }
 
         .checkbox {
@@ -196,45 +192,39 @@
         </a>
     </div>
 
-    <!-- HEADER -->
+    <!-- RC NUMBER (Top Right) -->
+    <div class="rc-badge">
+        NO: {{ entry.paper_number }}
+    </div>
+
+    <!-- CENTERED HEADER -->
     <div class="header">
-        <table class="header-table">
-            <tr>
-                <td class="company-block">
-                    <h1>{{ entry.company.name }}</h1>
-                    <p>{{ entry.company.address }}</p>
-                    <p>Tel: {{ entry.company.phone }}</p>
-                    <p>Email: {{ entry.company.email }}</p>
-                </td>
-                <td class="logo">
-                    <!-- RC NUMBER (Positioned above logo) -->
-                    <div class="rc-badge">
-                        RC NO: {{ entry.paper_number }}
-                    </div>
-                    
-                    {% if entry.company.logo %}
-                        {% if is_pdf %}
-                            <img src="file://{{ entry.company.logo.path }}">
-                        {% else %}
-                            <img src="{{ entry.company.logo.url }}">
-                        {% endif %}
-                    {% endif %}
-                </td>
-            </tr>
-        </table>
+        <div class="logo-container">
+            {% if entry.company.logo %}
+                {% if is_pdf %}
+                    <img src="file://{{ entry.company.logo.path }}">
+                {% else %}
+                    <img src="{{ entry.company.logo.url }}">
+                {% endif %}
+            {% endif %}
+        </div>
+        
+        <div class="company-block">
+            <h1>{{ entry.company.name }}</h1>
+            <p>{{ entry.company.address }}</p>
+            <p>Tel: {{ entry.company.phone }} | Email: {{ entry.company.email }}</p>
+        </div>
     </div>
 
     <!-- TITLE -->
     <div class="title-bar">
-        OFFICIAL RECEIPT
+        RECEIPT
     </div>
 
     <!-- INFO GRID -->
     <table class="info-grid">
         <tr>
-            <td class="label">Status</td>
-            <td>Payment Acknowledged</td>
-            <td class="label">Date :</td>
+            <td class="label">Date:</td>
             <td>{{ entry.date|date:"d M Y" }}</td>
         </tr>
     </table>
@@ -249,12 +239,17 @@
         <span class="amount-words">
             {{ entry.total|amount_in_words }} Only
         </span>
-        <br><br>
+        <br>
+
+        <!-- TOTAL BOX -->
+        <div class="amount-box">
+            TOTAL: {{ entry.currency_symbol|default:"ZMW" }} {{ entry.total|floatformat:2|intcomma }}
+        </div>
+        <br>
         
         Being payment for: <br>
         {{ entry.items.all.0.description }}{% if entry.items.all.count > 1 %} and other items{% endif %} 
-        (Ref: {{ entry.reference_number|default:entry.paper_number }})
-        <br><br>
+        <br>
 
         <div class="payment-methods">
             <strong>Payment Method:</strong> &nbsp;
@@ -263,10 +258,6 @@
             <span class="checkbox"></span> Bank Transfer &nbsp;&nbsp;
             <span class="checkbox"></span> Mobile Money
         </div>
-
-        <div class="amount-box">
-            TOTAL: {{ entry.currency_symbol|default:"ZMW" }} {{ entry.total|floatformat:2|intcomma }}
-        </div>
     </div>
 
     <!-- SIGNATURES -->
@@ -274,7 +265,7 @@
         <tr>
             <td></td>
             <td>
-                <div class="sig-line">Authorized Signature & Stamp</div>
+                <div class="sig-line">Signature</div>
                 <div style="font-size: 10px; margin-top: 5px;">Thank you for your business!</div>
             </td>
         </tr>

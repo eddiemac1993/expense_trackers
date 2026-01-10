@@ -2,326 +2,286 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>Quotation | {{ entry.company.name }}</title>
+    <meta charset="utf-8">
+    <title>Quotation | {{ entry.company.name }}</title>
 
-<style>
-/* PDF Page Configuration */
-@page {
-    size: A4;
-    margin: 0;
-}
+    <style>
+        @page {
+            size: A4;
+            margin: 18mm;
+        }
 
-body {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 12px;
-    color: #000;
-    margin: 0;
-    padding: 0;
-    position: relative;
-}
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            color: #000;
+            margin: 0;
+            padding: 0;
+        }
 
-.page-wrapper {
-    width: 100%;
-    min-height: 297mm;
-    background: #fff;
-    position: relative;
-}
+        .wrapper {
+            width: 170mm;
+            margin: 0 auto;
+            position: relative;
+        }
 
-/* Dark Header Bar to support white text badge */
-.accent-bar {
-    height: 80px;
-    background-color: #0f172a; /* Slate 900 */
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1;
-}
+        /* ===== ID BADGE (Top Right) ===== */
+        .rc-badge {
+            position: absolute;
+            top: 30px;
+            right: 0;
+            border: 2px solid #000;
+            padding: 4px 12px;
+            font-weight: bold;
+            font-size: 13px;
+            background: #fff;
+            text-transform: uppercase;
+            z-index: 10;
+        }
 
-/* High-Visibility Identification Badge - Background removed, white text */
-.outside-id-badge {
-    position: absolute;
-    top: 8px; /* High on top */
-    right: 50px;
-    background-color: transparent;
-    color: #ffffff;
-    padding: 10px 0;
-    z-index: 100;
-}
+        /* ===== HEADER (Centered) ===== */
+        .header {
+            width: 100%;
+            border-bottom: 3px solid #000;
+            margin-bottom: 12px;
+            padding-top: 5px;
+            text-align: center;
+        }
 
-/* Bold Serif font for the ID number - Official Stamp look */
-.id-number {
-    font-family: 'Georgia', 'Times New Roman', serif;
-    font-size: 24px;
-    font-weight: 900;
-    color: #ffffff;
-    letter-spacing: 1px;
-}
+        .logo-container {
+            margin-bottom: 10px;
+        }
 
-.wrapper {
-    width: 170mm;
-    margin: 0 auto;
-    position: relative;
-    z-index: 2;
-    padding-top: 20px;
-}
+        .logo-container img {
+            max-height: 28mm;
+            display: block;
+            margin: 0 auto;
+        }
 
-/* ===== HEADER ===== */
-.header {
-    width: 100%;
-    border-bottom: 3px solid #ffffff; /* Contrast line against dark bar */
-    margin-bottom: 25px;
-    padding-bottom: 10px;
-    color: #ffffff;
-}
+        .company-block h1 {
+            margin: 5px 0 0 0;
+            font-size: 20px;
+            text-transform: uppercase;
+        }
 
-.header-table {
-    width: 100%;
-    border-collapse: collapse;
-}
+        .company-block p {
+            margin: 2px 0;
+            font-size: 11px;
+        }
 
-.header-table td {
-    vertical-align: middle;
-}
+        /* ===== TITLE BAR ===== */
+        .title-bar {
+            margin: 15px 0;
+            padding: 8px;
+            border: 2px solid #000;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            background: #f9f9f9;
+        }
 
-.company-block h1 {
-    margin: 0;
-    font-size: 20px;
-    text-transform: uppercase;
-    letter-spacing: -0.5px;
-}
+        /* ===== INFO GRID ===== */
+        .info-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
 
-.company-block p {
-    margin: 2px 0;
-    font-size: 11px;
-    opacity: 0.9;
-}
+        .info-grid td {
+            border: 1px solid #000;
+            padding: 8px;
+            vertical-align: top;
+        }
 
-.logo img {
-    max-height: 25mm;
-    float: right;
-    filter: brightness(0) invert(1); /* Ensures logo is visible on dark background */
-}
+        .info-grid .label {
+            font-weight: bold;
+            width: 25%;
+            background: #f2f2f2;
+        }
 
-/* ===== TITLE BAR ===== */
-.title-bar {
-    margin: 15px 0;
-    padding: 10px;
-    border: 2px solid #000;
-    text-align: center;
-    font-size: 18px;
-    font-weight: bold;
-    letter-spacing: 2px;
-    background: #f9f9f9;
-}
+        /* ===== ITEMS TABLE ===== */
+        .items {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
 
-/* ===== INFO GRID ===== */
-.info-grid {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 15px;
-}
+        .items th, .items td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
 
-.info-grid td {
-    border: 1px solid #000;
-    padding: 8px;
-    vertical-align: top;
-}
+        .items th {
+            background: #f2f2f2;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
 
-.info-grid .label {
-    font-weight: bold;
-    width: 30%;
-    background: #f2f2f2;
-    font-size: 10px;
-    text-transform: uppercase;
-}
+        .text-right {
+            text-align: right;
+        }
 
-/* ===== ITEMS ===== */
-.items {
-    width: 100%;
-    border-collapse: collapse;
-}
+        .text-center {
+            text-align: center;
+        }
 
-.items th,
-.items td {
-    border: 1px solid #000;
-    padding: 10px 8px;
-}
+        /* ===== TOTALS ===== */
+        .totals-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
 
-.items th {
-    background: #eaeaea;
-    text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.5px;
-}
+        .totals {
+            width: 70mm;
+            border-collapse: collapse;
+        }
 
-.text-right {
-    text-align: right;
-}
+        .totals td {
+            border: 1px solid #000;
+            padding: 8px;
+        }
 
-/* ===== TOTALS ===== */
-.totals {
-    width: 65mm;
-    margin-left: auto;
-    margin-top: 15px;
-    border-collapse: collapse;
-}
+        .totals .grand-total {
+            font-weight: bold;
+            background: #f2f2f2;
+            font-size: 14px;
+        }
 
-.totals td {
-    border: 1px solid #000;
-    padding: 8px;
-}
+        /* ===== NOTES ===== */
+        .notes {
+            margin-top: 20px;
+            border: 1px solid #000;
+            padding: 10px;
+            font-size: 11px;
+            line-height: 1.6;
+        }
 
-.totals .grand {
-    font-weight: bold;
-    background: #f2f2f2;
-    font-size: 13px;
-}
+        /* ===== SIGNATURES ===== */
+        .signatures {
+            width: 100%;
+            margin-top: 25mm;
+            border-collapse: collapse;
+        }
 
-/* ===== NOTES ===== */
-.notes {
-    margin-top: 20px;
-    border: 1px solid #000;
-    padding: 12px;
-    font-size: 11px;
-    line-height: 1.5;
-}
+        .signatures td {
+            width: 33.33%;
+            text-align: center;
+            padding: 0 10px;
+        }
 
-/* ===== SIGNATURES ===== */
-.signatures {
-    width: 100%;
-    margin-top: 30mm;
-    border-collapse: collapse;
-}
+        .sig-line {
+            margin-top: 15mm;
+            border-top: 1px solid #000;
+            padding-top: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
 
-.signatures td {
-    width: 33%;
-    text-align: center;
-    padding: 0 10px;
-}
+        /* ===== PDF BUTTON ===== */
+        .no-print {
+            text-align: right;
+            margin-bottom: 8px;
+        }
 
-.sig-line {
-    margin-top: 15mm;
-    border-top: 1px solid #000;
-    padding-top: 6px;
-    font-size: 11px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
+        .no-print a {
+            padding: 6px 12px;
+            background: #000;
+            color: #fff;
+            text-decoration: none;
+            font-size: 11px;
+        }
 
-/* ===== PDF BUTTON ===== */
-.no-print {
-    text-align: right;
-    padding: 15px;
-    background: #f1f5f9;
-}
-
-.no-print a {
-    padding: 8px 16px;
-    background: #0f172a;
-    color: #fff;
-    text-decoration: none;
-    font-size: 11px;
-    font-weight: bold;
-    border-radius: 4px;
-}
-
-@media print {
-    .no-print { display: none; }
-    .accent-bar { -webkit-print-color-adjust: exact; }
-}
-</style>
+        @media print {
+            .no-print { display: none; }
+        }
+    </style>
 </head>
 
 <body>
+<div class="wrapper">
 
-<div class="no-print">
-    <a href="{% url 'paper_pdf' entry.id 'quotation' %}" target="_blank">
-        DOWNLOAD PDF DOCUMENT
-    </a>
-</div>
-
-<div class="page-wrapper">
-    <!-- DARK ACCENT BAR -->
-    <div class="accent-bar"></div>
-
-    <!-- FLOATING ID BADGE (White text, No Background) -->
-    <div class="outside-id-badge">
-        <span class="id-number">{{ entry.paper_number }}</span>
+    <div class="no-print">
+        <a href="{% url 'paper_pdf' entry.id 'quotation' %}" target="_blank">
+            Download PDF
+        </a>
     </div>
 
-    <div class="wrapper">
+    <!-- ID BADGE (Top Right) -->
+    <div class="rc-badge">
+        NO: {{ entry.paper_number }}
+    </div>
 
-        <!-- HEADER -->
-        <div class="header">
-            <table class="header-table">
-                <tr>
-                    <td class="company-block">
-                        <h1>{{ entry.company.name }}</h1>
-                        <p>{{ entry.company.address }}</p>
-                        <p>Tel: {{ entry.company.phone }} | Email: {{ entry.company.email }}</p>
-                    </td>
-                    <td class="logo">
-                        {% if entry.company.logo %}
-                            {% if is_pdf %}
-                                <img src="file://{{ entry.company.logo.path }}">
-                            {% else %}
-                                <img src="{{ entry.company.logo.url }}">
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                </tr>
-            </table>
+    <!-- CENTERED HEADER -->
+    <div class="header">
+        <div class="logo-container">
+            {% if entry.company.logo %}
+                {% if is_pdf %}
+                    <img src="file://{{ entry.company.logo.path }}">
+                {% else %}
+                    <img src="{{ entry.company.logo.url }}">
+                {% endif %}
+            {% endif %}
         </div>
-
-        <!-- TITLE -->
-        <div class="title-bar">
-            QUOTATION
+        
+        <div class="company-block">
+            <h1>{{ entry.company.name }}</h1>
+            <p>{{ entry.company.address }}</p>
+            <p>Tel: {{ entry.company.phone }} | Email: {{ entry.company.email }}</p>
         </div>
+    </div>
 
-        <!-- INFO GRID -->
-        <table class="info-grid">
+    <!-- TITLE -->
+    <div class="title-bar">
+        QUOTATION
+    </div>
+
+    <!-- INFO GRID -->
+    <table class="info-grid">
+        <tr>
+            <td class="label">Date:</td>
+            <td>{{ entry.date|date:"d M Y" }}</td>
+            <td class="label">Valid Until:</td>
+            <td>{{ entry.valid_until|date:"d M Y"|default:"7 Days from issue" }}</td>
+        </tr>
+        <tr>
+            <td class="label">Client:</td>
+            <td colspan="3">
+                <strong>{{ entry.client.name }}</strong><br>
+                {{ entry.client.address|default:"" }}
+            </td>
+        </tr>
+    </table>
+
+    <!-- ITEMS TABLE -->
+    <table class="items">
+        <thead>
             <tr>
-                <td class="label">Reference No</td>
-                <td><strong>{{ entry.paper_number }}</strong></td>
-                <td class="label">Date Issued</td>
-                <td>{{ entry.date|date:"d M Y" }}</td>
+                <th style="width: 40px;" class="text-center">#</th>
+                <th>Description</th>
+                <th style="width: 60px;" class="text-right">Qty</th>
+                <th style="width: 100px;" class="text-right">Unit Price</th>
+                <th style="width: 120px;" class="text-right">Total</th>
             </tr>
+        </thead>
+        <tbody>
+            {% for item in entry.items.all %}
             <tr>
-                <td class="label">Client Details</td>
-                <td colspan="3" style="font-size: 13px;">
-                    <strong>{{ entry.client.name }}</strong><br>
-                    {{ entry.client.address|default:"As per account address"|linebreaksbr }}
-                </td>
+                <td class="text-center">{{ forloop.counter }}</td>
+                <td><strong>{{ item.description }}</strong></td>
+                <td class="text-right">{{ item.quantity|floatformat:2 }}</td>
+                <td class="text-right">{{ item.unit_price|floatformat:2|intcomma }}</td>
+                <td class="text-right"><strong>{{ item.amount|floatformat:2|intcomma }}</strong></td>
             </tr>
-        </table>
+            {% endfor %}
+        </tbody>
+    </table>
 
-        <!-- ITEMS -->
-        <table class="items">
-            <thead>
-                <tr>
-                    <th style="width:5%">#</th>
-                    <th>Description of Goods/Services</th>
-                    <th style="width:12%">Qty</th>
-                    <th style="width:18%">Unit Price</th>
-                    <th style="width:20%">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in entry.items.all %}
-                <tr>
-                    <td class="text-center">{{ forloop.counter }}</td>
-                    <td><strong>{{ item.description }}</strong></td>
-                    <td class="text-right">{{ item.quantity|floatformat:2 }}</td>
-                    <td class="text-right">{{ item.unit_price|floatformat:2|intcomma }}</td>
-                    <td class="text-right"><strong>{{ item.amount|floatformat:2|intcomma }}</strong></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <!-- TOTALS -->
+    <!-- TOTALS -->
+    <div class="totals-wrapper">
         <table class="totals">
             <tr>
                 <td>Subtotal</td>
@@ -331,34 +291,40 @@ body {
                 <td>Tax ({{ entry.tax_percentage }}%)</td>
                 <td class="text-right">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
             </tr>
-            <tr class="grand">
-                <td><strong>Total Amount</strong></td>
-                <td class="text-right"><strong>{{ entry.total|floatformat:2|intcomma }}</strong></td>
+            <tr class="grand-total">
+                <td>TOTAL AMOUNT</td>
+                <td class="text-right">{{ entry.currency_symbol|default:"ZMW" }} {{ entry.total|floatformat:2|intcomma }}</td>
             </tr>
         </table>
-
-        <!-- NOTES -->
-        <div class="notes">
-            <strong>Notes & Terms:</strong><br>
-            • Prices quoted are valid for {{ entry.validity_days|default:"7" }} days.<br>
-            • Payment terms: As per standard agreement.<br>
-            • Delivery/Completion: Subject to availability and confirmation of order.
-        </div>
-
-        <!-- SIGNATURES -->
-        <table class="signatures">
-            <tr>
-                <td><div class="sig-line">Prepared By</div></td>
-                <td><div class="sig-line">Approved By</div></td>
-                <td><div class="sig-line">Client Acknowledgement</div></td>
-            </tr>
-        </table>
-
-        <div style="margin-top: 25mm; text-align: center; font-size: 9px; color: #666; border-top: 1px solid #eee; padding-top: 10px;">
-            {{ entry.company.name }} | {{ entry.company.email }}
-        </div>
-
     </div>
+
+    <!-- NOTES -->
+    <div class="notes">
+        <strong>Notes & Terms:</strong><br>
+        • Prices quoted are valid for {{ entry.validity_days|default:"7" }} days.<br>
+        • Delivery/Completion: Subject to availability and confirmation.<br>
+        • Please refer to the reference number above for all inquiries.
+    </div>
+
+    <!-- SIGNATURES -->
+    <table class="signatures">
+        <tr>
+            <td>
+                <div class="sig-line">Prepared By</div>
+            </td>
+            <td>
+                <div class="sig-line">Approved By</div>
+            </td>
+            <td>
+                <div class="sig-line">Client Acknowledgement</div>
+            </td>
+        </tr>
+    </table>
+
+    <div style="margin-top: 15mm; text-align: center; font-size: 10px; color: #666;">
+        Thank you for the opportunity to quote!
+    </div>
+
 </div>
 </body>
 </html>
