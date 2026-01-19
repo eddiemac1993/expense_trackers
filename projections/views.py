@@ -1,20 +1,19 @@
-from datetime import date
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Sum
-from django.views.decorators.http import require_http_methods, require_POST
-from django.contrib import messages
-
-from .models import ProjectRecord
-
-
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib import messages
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+
+try:
+    from weasyprint import HTML
+    WEASYPRINT_AVAILABLE = True
+except ImportError:
+    WEASYPRINT_AVAILABLE = False
+    HTML = None
 
 from .models import ProjectRecord
 
@@ -26,7 +25,6 @@ def projection_dashboard(request):
     - GET: list records, filters, totals, charts
     - POST: create new project record
     """
-
     # =========================
     # HANDLE CREATE (POST)
     # =========================
@@ -71,26 +69,17 @@ def projection_dashboard(request):
     # =========================
     # HANDLE DISPLAY (GET)
     # =========================
-
-    # ALL active records (base)
     all_records = ProjectRecord.objects.filter(is_active=True)
-
-    # Combined overall total (WON + LOST + PENDING)
     overall_total_amount = (
         all_records.aggregate(total=Sum("amount"))
         .get("total") or Decimal("0.00")
     )
-
-    # Records that will be filtered
     records = all_records.order_by("-project_date")
-
-    # Dropdown data
     companies = (
         all_records.values_list("company", flat=True)
         .distinct()
         .order_by("company")
     )
-
     years = (
         all_records.values_list("year", flat=True)
         .distinct()
@@ -107,13 +96,10 @@ def projection_dashboard(request):
 
     if company:
         records = records.filter(company=company)
-
     if status:
         records = records.filter(status=status)
-
     if completion_status:
         records = records.filter(completion_status=completion_status)
-
     if year:
         records = records.filter(year=year)
 
@@ -125,13 +111,11 @@ def projection_dashboard(request):
         .aggregate(total=Sum("amount"))
         .get("total") or Decimal("0.00")
     )
-
     total_lost = (
         records.filter(status="LOST")
         .aggregate(total=Sum("amount"))
         .get("total") or Decimal("0.00")
     )
-
     company_totals = (
         records.filter(status="WON")
         .values("company")
@@ -144,13 +128,10 @@ def projection_dashboard(request):
         "companies": companies,
         "years": years,
         "company_totals": company_totals,
-
-        # FILTERED TOTALS
         "total_won": total_won,
         "total_lost": total_lost,
-
-        # OVERALL COMBINED TOTAL
         "overall_total_amount": overall_total_amount,
+        "weasyprint_available": WEASYPRINT_AVAILABLE,  # Pass to template
     })
 
 
@@ -158,12 +139,7 @@ def project_detail(request, pk):
     """
     Project detail page
     """
-    project = get_object_or_404(
-        ProjectRecord,
-        pk=pk,
-        is_active=True
-    )
-
+    project = get_object_or_404(ProjectRecord, pk=pk, is_active=True)
     return render(request, "projections/project_detail.html", {
         "project": project
     })
@@ -177,6 +153,105 @@ def archive_project(request, pk):
     project = get_object_or_404(ProjectRecord, pk=pk)
     project.is_active = False
     project.save(update_fields=["is_active"])
-
     messages.success(request, "Project record archived successfully.")
     return redirect("projections:dashboardpro")
+
+
+def export_projects_pdf(request):
+    """
+    Export filtered projects to PDF using WeasyPrint
+    """
+    if not WEASYPRINT_AVAILABLE:
+        messages.error(request, "PDF export is not available. Please install WeasyPrint.")
+        return redirect("projections:dashboardpro")
+    
+    # Apply same filters as dashboard
+    all_records = ProjectRecord.objects.filter(is_active=True)
+    records = all_records.order_by("-project_date")
+    
+    # Get filter parameters
+    company = request.GET.get("company")
+    status = request.GET.get("status")
+    completion_status = request.GET.get("completion_status")
+    year = request.GET.get("year")
+    
+    # Apply filters
+    if company:
+        records = records.filter(company=company)
+    if status:
+        records = records.filter(status=status)
+    if completion_status:
+        records = records.filter(completion_status=completion_status)
+    if year:
+        records = records.filter(year=year)
+    
+    # Calculate totals
+    total_won = (
+        records.filter(status="WON")
+        .aggregate(total=Sum("amount"))
+        .get("total") or Decimal("0.00")
+    )
+    
+    total_lost = (
+        records.filter(status="LOST")
+        .aggregate(total=Sum("amount"))
+        .get("total") or Decimal("0.00")
+    )
+    
+    overall_total_amount = (
+        all_records.aggregate(total=Sum("amount"))
+        .get("total") or Decimal("0.00")
+    )
+    
+    # Get company totals for the filtered set
+    company_totals = (
+        records.filter(status="WON")
+        .values("company")
+        .annotate(total=Sum("amount"))
+        .order_by("-total")
+    )
+    
+    # Format amounts with thousand separators
+    def format_amount(amount):
+        if amount is None:
+            return "0.00"
+        # Format with thousand separators
+        return f"{amount:,.2f}"
+    
+    # Create PDF context
+    context = {
+        "records": records,
+        "total_won": total_won,
+        "total_won_formatted": format_amount(total_won),
+        "total_lost": total_lost,
+        "total_lost_formatted": format_amount(total_lost),
+        "overall_total_amount": overall_total_amount,
+        "overall_total_formatted": format_amount(overall_total_amount),
+        "company_totals": company_totals,
+        "filter_summary": {
+            "company": company,
+            "status": status,
+            "completion_status": completion_status,
+            "year": year,
+        },
+        "generated_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "filter_applied": any([company, status, completion_status, year]),
+        "total_records": records.count(),
+        "format_amount": format_amount,  # Pass function to template
+    }
+    
+    # Render HTML template
+    html_string = render_to_string("projections/pdf_export.html", context)
+    
+    # Create PDF
+    html = HTML(string=html_string)
+    
+    # Create response
+    response = HttpResponse(content_type="application/pdf")
+    filename = f"project_projects_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+    response["Content-Disposition"] = f"inline; filename={filename}"
+    
+    # Generate PDF
+    html.write_pdf(response)
+    
+    return response

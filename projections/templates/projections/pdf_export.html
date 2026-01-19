@@ -1,0 +1,416 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Project Projections Report - {{ generated_date|date:"Y-m-d" }}</title>
+    <style>
+        /* PDF-Specific Page Setup */
+        @page {
+            size: A4 landscape;
+            margin: 1.25cm;
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 8pt;
+                font-family: 'Helvetica', sans-serif;
+                color: #95a5a6;
+            }
+            @bottom-left {
+                content: "Generated: {{ generated_date|date:'d/m/Y H:i' }}";
+                font-size: 8pt;
+                font-family: 'Helvetica', sans-serif;
+                color: #95a5a6;
+            }
+        }
+
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 9pt;
+            line-height: 1.5;
+            color: #2c3e50;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header Section - Fixed for PDF */
+        .header {
+            width: 100%;
+            border-bottom: 2px solid #34495e;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            page-break-after: avoid;
+        }
+
+        .header h1 {
+            font-size: 20pt;
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+            letter-spacing: -0.5px;
+        }
+
+        .header .subtitle {
+            font-size: 10pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-meta {
+            position: absolute;
+            top: 0;
+            right: 0;
+            text-align: right;
+            font-size: 8pt;
+            color: #7f8c8d;
+        }
+
+        /* Summary Dashboard - Fixed for PDF compatibility */
+        .summary-container {
+            display: block;
+            width: 100%;
+            margin-bottom: 25px;
+            page-break-after: avoid;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .summary-card {
+            flex: 1;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e1e8ed;
+            min-height: 70px;
+            box-sizing: border-box;
+        }
+
+        .card-total { 
+            background-color: #f8fbff; 
+            border-left: 5px solid #3498db;
+        }
+        
+        .card-won { 
+            background-color: #f4fdf9; 
+            border-left: 5px solid #27ae60;
+        }
+
+        .card-lost { 
+            background-color: #fffaf9; 
+            border-left: 5px solid #e74c3c;
+        }
+
+        .summary-label {
+            display: block;
+            font-size: 7.5pt;
+            font-weight: bold;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .summary-value {
+            font-size: 14pt;
+            font-weight: 800;
+            color: #2c3e50;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Filter Chips - Improved */
+        .filter-area {
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #fdfaf0;
+            border: 1px solid #f3e5ab;
+            border-radius: 4px;
+            page-break-after: avoid;
+        }
+
+        .filter-title {
+            font-size: 8pt;
+            font-weight: bold;
+            color: #a0522d;
+            margin-bottom: 8px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #fff;
+            border: 1px solid #f3e5ab;
+            padding: 3px 10px;
+            margin: 0 5px 5px 0;
+            border-radius: 12px;
+            font-size: 7pt;
+            color: #7f6000;
+        }
+
+        /* Main Table Styles - Fixed column widths */
+        .table-section-title {
+            font-size: 11pt;
+            font-weight: bold;
+            border-left: 4px solid #34495e;
+            padding-left: 8px;
+            margin-bottom: 15px;
+            margin-top: 25px;
+            page-break-after: avoid;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            font-size: 8pt;
+            table-layout: fixed;
+        }
+
+        .data-table th {
+            background-color: #34495e;
+            color: #ffffff;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 8px;
+            font-size: 8pt;
+            text-transform: uppercase;
+            border: none;
+        }
+
+        .data-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ecf0f1;
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
+
+        .data-table tr:nth-child(even) { 
+            background-color: #f9f9f9; 
+        }
+
+        .col-idx { width: 5%; }
+        .col-title { width: 23%; }
+        .col-company { width: 13%; }
+        .col-customer { width: 14%; }
+        .col-amount { width: 12%; }
+        .col-date { width: 9%; }
+        .col-status { width: 8%; }
+        .col-comp { width: 10%; }
+        .col-year { width: 6%; }
+
+        /* Table cell alignment */
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+
+        /* Status Pills */
+        .pill {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 7pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .pill-won { background: #d4edda; color: #155724; }
+        .pill-lost { background: #f8d7da; color: #721c24; }
+        .pill-pending { background: #fff3cd; color: #856404; }
+
+        .completion-bar {
+            font-size: 7pt;
+            color: #3498db;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: #e8f4fd;
+            display: inline-block;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .currency-font {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+        }
+
+        /* Company Totals Grid - Fixed for PDF */
+        .company-totals-container {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+
+        .company-totals-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .company-box {
+            flex: 1 0 calc(25% - 10px);
+            min-width: 150px;
+            background: #ffffff;
+            border: 1px solid #e1e8ed;
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+
+        .company-label {
+            font-size: 8pt;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .company-val {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #2c3e50;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Utilities */
+        .keep-together { page-break-inside: avoid; }
+        .page-break-before { page-break-before: always; }
+        .page-break-after { page-break-after: always; }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #bdc3c7;
+            border: 2px dashed #ecf0f1;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+        
+        /* Print optimizations */
+        @media print {
+            .data-table {
+                page-break-inside: auto;
+            }
+            
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+            
+            thead {
+                display: table-header-group;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>Project Projections</h1>
+        <div class="subtitle">Commercial & Execution Performance Report</div>
+    </div>
+    
+    <!-- Active Filters -->
+    {% if filter_applied %}
+    <div class="filter-area keep-together">
+        <div class="filter-title">ACTIVE REPORT FILTERS</div>
+        {% if filter_summary.company %}<span class="tag">Company: {{ filter_summary.company }}</span>{% endif %}
+        {% if filter_summary.status %}<span class="tag">Status: {{ filter_summary.status }}</span>{% endif %}
+        {% if filter_summary.completion_status %}<span class="tag">Completion: {{ filter_summary.completion_status }}</span>{% endif %}
+        {% if filter_summary.year %}<span class="tag">Year: {{ filter_summary.year }}</span>{% endif %}
+        {% if not filter_summary.company and not filter_summary.status and not filter_summary.completion_status and not filter_summary.year %}
+            <span class="tag">Show All Records</span>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Dashboard Summary -->
+    <div class="summary-container keep-together">
+        <div class="summary-row">
+            <div class="summary-card card-total">
+                <span class="summary-label">Gross Projection</span>
+                <span class="summary-value">ZMW {{ overall_total_formatted }}</span>
+            </div>
+            <div class="summary-card card-won">
+                <span class="summary-label">Total Won</span>
+                <span class="summary-value">ZMW {{ total_won_formatted }}</span>
+            </div>
+            <div class="summary-card card-lost">
+                <span class="summary-label">Total Lost</span>
+                <span class="summary-value">ZMW {{ total_lost_formatted }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="table-section-title keep-together">Detailed Project Logs</div>
+    {% if records %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="col-idx text-center">#</th>
+                <th class="col-title text-left">Project Title</th>
+                <th class="col-company text-left">Business Unit</th>
+                <th class="col-customer text-left">Customer</th>
+                <th class="col-amount text-right">Amount (ZMW)</th>
+                <th class="col-date text-center">Date</th>
+                <th class="col-status text-center">Status</th>
+                <th class="col-comp text-center">Execution</th>
+                <th class="col-year text-center">Yr</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in records %}
+            <tr>
+                <td class="col-idx text-center">{{ forloop.counter }}</td>
+                <td class="col-title text-left"><strong>{{ r.title|truncatechars:45 }}</strong></td>
+                <td class="col-company text-left">{{ r.company|truncatechars:25 }}</td>
+                <td class="col-customer text-left">{{ r.customer|truncatechars:30 }}</td>
+                <td class="col-amount text-right currency-font">{{ r.amount|floatformat:2|intcomma }}</td>
+                <td class="col-date text-center">{{ r.project_date|date:"d/m/Y" }}</td>
+                <td class="col-status text-center">
+                    <span class="pill pill-{{ r.status|lower }}">
+                        {{ r.get_status_display }}
+                    </span>
+                </td>
+                <td class="col-comp text-center">
+                    <span class="completion-bar">{{ r.get_completion_status_display }}</span>
+                </td>
+                <td class="col-year text-center">{{ r.year }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-data">
+        <p>No project records found matching the specified criteria.</p>
+    </div>
+    {% endif %}
+
+    <!-- Secondary Summary: Company Breakdown -->
+    {% if company_totals %}
+    <div class="keep-together company-totals-container">
+        <div class="table-section-title">Won Value Breakdown by Business Unit</div>
+        <div class="company-totals-grid">
+            {% for company in company_totals %}
+            <div class="company-box">
+                <div class="company-label">{{ company.company|upper }}</div>
+                <div class="company-val">ZMW {{ company.total|floatformat:2|intcomma }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div style="margin-top: 40px; font-size: 7.5pt; color: #95a5a6; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
+        End of Report - Confidential Internal Document<br>
+        Total Records Processed: {{ total_records }}
+    </div>
+
+</body>
+</html>

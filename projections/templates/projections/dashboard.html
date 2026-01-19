@@ -72,14 +72,23 @@
                 Commercial & execution performance summary
             </div>
         </div>
-        <div class="d-flex gap-2">
-            <a href="/" class="btn btn-outline-secondary btn-sm">← Back</a>
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addProjectModal">
-                + Add Project
-            </button>
-            <button onclick="window.print()" class="btn btn-outline-primary btn-sm">
-                Print
-            </button>
+<!-- In the button group section -->
+<div class="d-flex gap-2">
+    <a href="/" class="btn btn-outline-secondary btn-sm">← Back</a>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addProjectModal">
+        + Add Project
+    </button>
+
+    <!-- PDF Export Button -->
+    <a href="{% url 'projections:export_pdf' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+       class="btn btn-success btn-sm" target="_blank">
+        📄 Export PDF
+    </a>
+
+    <button onclick="window.print()" class="btn btn-outline-primary btn-sm">
+        Print
+    </button>
+</div>button>
         </div>
     </div>
 
