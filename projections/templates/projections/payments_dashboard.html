@@ -1,0 +1,292 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments Dashboard</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-bg: #f8fafc;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --border-color: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        body { 
+            background-color: var(--primary-bg);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        /* Top Header Area */
+        .page-header {
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-title {
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            color: #0f172a;
+        }
+
+        /* Metrics Cards */
+        .metric-card {
+            border: none;
+            border-radius: 12px;
+            background: #ffffff;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: var(--card-shadow);
+            border-left: 5px solid transparent;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        /* Card Accents */
+        .border-value { border-left-color: #3b82f6; }
+        .border-paid { border-left-color: #10b981; }
+        .border-balance { border-left-color: #ef4444; }
+
+        /* Project Table */
+        .table-container {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .table-header {
+            background-color: #f8fafc;
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table thead th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            padding: 1rem;
+            border: none;
+        }
+
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            color: #334155;
+            border-color: #f1f5f9;
+        }
+
+        .project-link {
+            font-weight: 600;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .project-link:hover {
+            text-decoration: underline;
+        }
+
+        .font-mono {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 0.4em 0.8em;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .bg-paid { background-color: #dcfce7; color: #166534; }
+        .bg-partial { background-color: #fef3c7; color: #92400e; }
+        .bg-unpaid { background-color: #fee2e2; color: #991b1b; }
+
+        /* Action Button */
+        .btn-export {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-export:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+            color: #1e293b;
+        }
+
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            body { background: #fff; padding: 0; }
+            .no-print { display: none !important; }
+            .metric-card { box-shadow: none; border: 1px solid #ddd; }
+            .table-container { box-shadow: none; border: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-4 p-lg-5">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
+        <div>
+            <h3 class="page-title mb-1">Payments & Outstanding Dashboard</h3>
+            <p class="text-muted mb-0">Portfolio performance for all WON projects</p>
+        </div>
+        <div class="no-print">
+            <a href="{% url 'projections:payments_dashboard_pdf' %}" class="btn btn-export shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf me-2" viewBox="0 0 16 16">
+                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                    <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.406.123-.902.747-1.137 1.043-.393 2.134-.51 3.23-.43.533.039 1.15.116 1.484.243.336.126.398.245.399.307a.289.289 0 0 1-.153.243c-.18.128-.531.192-.99.192-1.226 0-2.487-.205-3.32-.412a.504.504 0 0 0-.05-.011c-.417.062-1.002.164-1.218.298a.544.544 0 0 1-.212.089z"/>
+                </svg>
+                Export to PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card metric-card border-value p-4">
+                <div class="metric-label">Total Project Value</div>
+                <div class="metric-value">
+                    <small class="text-muted fw-normal">ZMW</small> {{ totals.total_projects_value|floatformat:2|intcomma }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card metric-card border-paid p-4">
+                <div class="metric-label">Total Collected</div>
+                <div class="metric-value text-success">
+                    <small class="text-muted fw-normal">ZMW</small> {{ totals.total_paid|floatformat:2|intcomma }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card metric-card border-balance p-4">
+                <div class="metric-label">Total Outstanding</div>
+                <div class="metric-value text-danger">
+                    <small class="text-muted fw-normal">ZMW</small> {{ totals.total_balance|floatformat:2|intcomma }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROJECT TABLE -->
+    <div class="table-container">
+        <div class="table-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold" style="font-size: 1rem; color: #334155;">Project Breakdown</h5>
+            <span class="badge bg-light text-dark border fw-medium">{{ projects|length }} Projects Found</span>
+        </div>
+
+        <div class="table-responsive">
+<table class="table mb-0 align-middle">
+    <thead>
+        <tr>
+            <th style="min-width: 200px;">Project Title</th>
+            <th>Customer</th>
+            <th>Company</th>
+            <th class="text-end">Value</th>
+            <th class="text-end">Paid</th>
+            <th class="text-end">Balance</th>
+            <th class="text-center">Payment Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for project in projects %}
+        <tr>
+            <td>
+               <a href="{% url 'projections:project_payments' project.id %}"
+   class="project-link">
+    {{ project.title }}
+</a>
+
+            </td>
+            <td>
+                <span class="fw-semibold text-dark">
+                    {{ project.customer }}
+                </span>
+            </td>
+            <td>
+                <span class="text-secondary fw-medium">
+                    {{ project.company }}
+                </span>
+            </td>
+            <td class="text-end font-mono fw-bold">
+                {{ project.amount|floatformat:2|intcomma }}
+            </td>
+            <td class="text-end font-mono text-success">
+                {{ project.paid_amount|floatformat:2|intcomma }}
+            </td>
+            <td class="text-end font-mono text-danger fw-bold">
+                {{ project.outstanding_amount|floatformat:2|intcomma }}
+            </td>
+            <td class="text-center">
+                {% if project.paid_amount == 0 %}
+                    <span class="status-badge bg-unpaid">Unpaid</span>
+                {% elif project.paid_amount < project.amount %}
+                    <span class="status-badge bg-partial">Partial</span>
+                {% else %}
+                    <span class="status-badge bg-paid">Paid</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+                <p class="mb-0">No WON projects available in the database.</p>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+        </div>
+    </div>
+    
+    <div class="mt-4 text-center no-print">
+        <p class="text-muted small">© {% now "Y" %} Company Financial System | Internal Use Only</p>
+    </div>
+
+</div>
+
+</body>
+</html>

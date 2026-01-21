@@ -1,0 +1,275 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments & Outstanding Dashboard</title>
+    <style>
+        /* PDF/Print Optimization */
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+
+        /* Core Reset & Typography */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 10.5px; /* Reduced for better A4 fit */
+            color: #334155;
+            line-height: 1.3;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+        }
+
+        /* Container for screen viewing */
+        .wrapper {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        /* Header Section */
+        header {
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        h2 {
+            margin: 0;
+            color: #0f172a;
+            font-size: 20px;
+            letter-spacing: -0.025em;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 10px;
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .meta-info {
+            text-align: right;
+            color: #94a3b8;
+            font-size: 9px;
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            flex: 1;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+        }
+
+        .card-label {
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .card-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+            white-space: nowrap;
+        }
+
+        .card.highlight-blue { border-left: 3px solid #3b82f6; }
+        .card.highlight-green { border-left: 3px solid #10b981; }
+        .card.highlight-red { border-left: 3px solid #ef4444; }
+
+        /* Table Styling */
+        table.data {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            table-layout: fixed; /* Strict column control */
+        }
+
+        table.data th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+            text-align: left;
+            padding: 8px 6px;
+            border-bottom: 2px solid #e2e8f0;
+            text-transform: uppercase;
+            font-size: 8.5px;
+        }
+
+        table.data td {
+            padding: 8px 6px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
+
+        table.data tr:nth-child(even) {
+            background-color: #fcfcfd;
+        }
+
+        /* Precision Optimized Column Widths */
+        .col-title { width: 17%; } 
+        .col-customer { width: 17%; }
+        .col-company { width: 10%; }
+        .col-money { width: 13%; text-align: right; }
+        .col-status { width: 17%; text-align: center; } /* Increased to prevent clipping */
+
+        .right { text-align: right; }
+        .font-mono { 
+            font-family: 'Courier New', Courier, monospace; 
+            font-weight: 600; 
+            font-size: 10px;
+            white-space: nowrap;
+        }
+
+        /* Status Badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 5px;
+            border-radius: 3px;
+            font-size: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            white-space: nowrap; /* Keep the status on one line */
+        }
+
+        .badge-unpaid { background-color: #fee2e2; color: #991b1b; }
+        .badge-partial { background-color: #fef3c7; color: #92400e; }
+        .badge-paid { background-color: #dcfce7; color: #166534; }
+
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+            font-size: 9px;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Avoid breaking rows across pages */
+        tr { page-break-inside: avoid; }
+        
+        @media print {
+            .wrapper { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <header>
+        <div>
+            <h2>Payments & Outstanding Dashboard</h2>
+            <div class="subtitle">WON Projects Portfolio</div>
+        </div>
+        <div class="meta-info">
+            Generated on: {{ generated_on }}<br>
+            Financial Record • Confidential
+        </div>
+    </header>
+
+    <!-- SUMMARY SECTION -->
+    <div class="summary-grid">
+        <div class="card highlight-blue">
+            <div class="card-label">Total Project Value</div>
+            <div class="card-value">ZMW {{ totals.total_projects_value|floatformat:2|intcomma }}</div>
+        </div>
+        <div class="card highlight-green">
+            <div class="card-label">Total Amount Paid</div>
+            <div class="card-value">ZMW {{ totals.total_paid|floatformat:2|intcomma }}</div>
+        </div>
+        <div class="card highlight-red">
+            <div class="card-label">Outstanding Balance</div>
+            <div class="card-value">ZMW {{ totals.total_balance|floatformat:2|intcomma }}</div>
+        </div>
+    </div>
+
+    <!-- DATA TABLE -->
+    <table class="data">
+        <thead>
+            <tr>
+                <th class="col-title">Project Title</th>
+                <th class="col-customer">Customer</th>
+                <th class="col-company">Company</th>
+                <th class="col-money">Value (ZMW)</th>
+                <th class="col-money">Paid (ZMW)</th>
+                <th class="col-money">Balance (ZMW)</th>
+                <th class="col-status">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects %}
+            <tr>
+                <td style="font-weight: 500; color: #0f172a;">
+                    {{ project.title }}
+                </td>
+                <td>
+                    {{ project.customer }}
+                </td>
+                <td>
+                    {{ project.company }}
+                </td>
+                <td class="col-money font-mono">
+                    {{ project.amount|floatformat:2|intcomma }}
+                </td>
+                <td class="col-money font-mono" style="color: #059669;">
+                    {{ project.paid_amount|floatformat:2|intcomma }}
+                </td>
+                <td class="col-money font-mono" style="color: #dc2626;">
+                    {{ project.outstanding_amount|floatformat:2|intcomma }}
+                </td>
+                <td class="col-status">
+                    {% if project.paid_amount == 0 %}
+                        <span class="badge badge-unpaid">Unpaid</span>
+                    {% elif project.paid_amount < project.amount %}
+                        <span class="badge badge-partial">Partial</span>
+                    {% else %}
+                        <span class="badge badge-paid">Settled</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align:center; padding: 30px; color: #94a3b8;">
+                    <div style="font-size: 11px;">
+                        No active WON projects found in the system.
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <span>&copy; {% now "Y" %} Company Expenses System</span>
+        <span>Secure Document | Financial Summary</span>
+    </div>
+</div>
+
+</body>
+</html>

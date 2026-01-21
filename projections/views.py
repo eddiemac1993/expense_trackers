@@ -156,6 +156,272 @@ def archive_project(request, pk):
     messages.success(request, "Project record archived successfully.")
     return redirect("projections:dashboardpro")
 
+from decimal import Decimal
+
+from django.shortcuts import render
+from django.db.models import Sum, F, DecimalField
+from django.db.models.functions import Coalesce
+
+from .models import ProjectRecord
+
+
+def payments_dashboard(request):
+    """
+    Payments & Outstanding Dashboard
+    - Shows ONLY WON projects
+    - Correct decimal precision (2dp)
+    - Print-friendly
+    """
+
+    projects = (
+        ProjectRecord.objects
+        .filter(is_active=True, status='WON')
+        .annotate(
+            paid_amount=Coalesce(
+                Sum('payments__amount_paid'),
+                Decimal('0.00'),
+                output_field=DecimalField(max_digits=14, decimal_places=2)
+            ),
+            outstanding_amount=F('amount') - Coalesce(
+                Sum('payments__amount_paid'),
+                Decimal('0.00'),
+                output_field=DecimalField(max_digits=14, decimal_places=2)
+            )
+        )
+        .order_by('-project_date')
+    )
+
+    totals = projects.aggregate(
+        total_projects_value=Sum('amount'),
+        total_paid=Sum('paid_amount'),
+        total_balance=Sum('outstanding_amount')
+    )
+
+    return render(
+        request,
+        'projections/payments_dashboard.html',
+        {
+            'projects': projects,
+            'totals': totals,
+        }
+    )
+
+from decimal import Decimal
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.db.models import Sum
+
+from .models import ProjectRecord, Payment
+
+
+def project_payments(request, pk):
+    project = get_object_or_404(
+        ProjectRecord,
+        pk=pk,
+        status="WON",
+        is_active=True
+    )
+
+    payments = project.payments.order_by("-payment_date")
+
+    total_paid = project.total_paid
+    balance_due = project.balance_due
+
+    if request.method == "POST":
+        amount = Decimal(request.POST.get("amount_paid", "0"))
+        payment_date = request.POST.get("payment_date")
+        reference = request.POST.get("reference", "")
+        notes = request.POST.get("notes", "")
+
+        if amount <= 0:
+            messages.error(request, "Amount must be greater than zero.")
+            return redirect("projections:project_payments", pk=pk)
+
+        if amount > balance_due:
+            messages.error(request, "Payment exceeds remaining balance.")
+            return redirect("projections:project_payments", pk=pk)
+
+        Payment.objects.create(
+            project=project,
+            amount_paid=amount,
+            payment_date=payment_date,
+            reference=reference,
+            notes=notes,
+        )
+
+        messages.success(request, "Payment recorded successfully.")
+        return redirect("projections:project_payments", pk=pk)
+
+    return render(
+        request,
+        "projections/project_payments.html",
+        {
+            "project": project,
+            "payments": payments,
+            "total_paid": total_paid,
+            "balance_due": balance_due,
+        }
+    )
+
+def edit_payment(request, payment_id):
+    payment = get_object_or_404(Payment, pk=payment_id)
+    project = payment.project
+
+    other_payments_total = (
+        Payment.objects
+        .filter(project=project)
+        .exclude(pk=payment.pk)
+        .aggregate(total=Sum("amount_paid"))
+        .get("total") or Decimal("0.00")
+    )
+
+    max_allowed = project.amount - other_payments_total
+
+    if request.method == "POST":
+        amount = Decimal(request.POST.get("amount_paid", "0"))
+        payment_date = request.POST.get("payment_date")
+        reference = request.POST.get("reference", "")
+        notes = request.POST.get("notes", "")
+
+        if amount <= 0:
+            messages.error(request, "Amount must be greater than zero.")
+            return redirect("projections:edit_payment", payment_id=payment_id)
+
+        if amount > max_allowed:
+            messages.error(
+                request,
+                f"Amount exceeds allowed maximum (ZMW {max_allowed:,.2f})."
+            )
+            return redirect("projections:edit_payment", payment_id=payment_id)
+
+        payment.amount_paid = amount
+        payment.payment_date = payment_date
+        payment.reference = reference
+        payment.notes = notes
+        payment.save()
+
+        messages.success(request, "Payment updated successfully.")
+        return redirect(
+            "projections:project_payments",
+            pk=project.pk
+        )
+
+    return render(
+        request,
+        "projections/edit_payment.html",
+        {
+            "payment": payment,
+            "project": project,
+            "max_allowed": max_allowed,
+        }
+    )
+
+def payments_dashboard_pdf(request):
+    """
+    Export Payments & Outstanding Dashboard to PDF
+    (WON projects only)
+    """
+
+    if not WEASYPRINT_AVAILABLE:
+        messages.error(request, "PDF export is not available. Please install WeasyPrint.")
+        return redirect("projections:payments_dashboard")
+
+    projects = (
+        ProjectRecord.objects
+        .filter(is_active=True, status='WON')
+        .annotate(
+            paid_amount=Coalesce(
+                Sum('payments__amount_paid'),
+                Decimal('0.00'),
+                output_field=DecimalField(max_digits=14, decimal_places=2)
+            ),
+            outstanding_amount=F('amount') - Coalesce(
+                Sum('payments__amount_paid'),
+                Decimal('0.00'),
+                output_field=DecimalField(max_digits=14, decimal_places=2)
+            )
+        )
+        .order_by('-project_date')
+    )
+
+    totals = projects.aggregate(
+        total_projects_value=Sum('amount'),
+        total_paid=Sum('paid_amount'),
+        total_balance=Sum('outstanding_amount')
+    )
+
+    context = {
+        "projects": projects,
+        "totals": totals,
+        "generated_on": datetime.now().strftime("%d %B %Y %H:%M"),
+    }
+
+    html_string = render_to_string(
+        "projections/payments_dashboard_pdf.html",
+        context
+    )
+
+    html = HTML(string=html_string)
+
+    response = HttpResponse(content_type="application/pdf")
+    filename = f"payments_dashboard_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+    response["Content-Disposition"] = f"inline; filename={filename}"
+
+    html.write_pdf(response)
+    return response
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from decimal import Decimal
+
+from .models import ProjectRecord, Payment
+
+
+def add_payment(request, pk):
+    project = get_object_or_404(
+        ProjectRecord,
+        pk=pk,
+        is_active=True,
+        status="WON"
+    )
+
+    total_paid = project.total_paid
+    balance_due = project.balance_due
+
+    if request.method == "POST":
+        amount = Decimal(request.POST.get("amount_paid", "0"))
+        payment_date = request.POST.get("payment_date")
+        reference = request.POST.get("reference", "")
+
+        if amount <= 0:
+            messages.error(request, "Payment amount must be greater than zero.")
+            return redirect("projections:add_payment", pk=pk)
+
+        if amount > balance_due:
+            messages.error(request, "Payment exceeds outstanding balance.")
+            return redirect("projections:add_payment", pk=pk)
+
+        Payment.objects.create(
+            project=project,
+            amount_paid=amount,
+            payment_date=payment_date,
+            reference=reference,
+        )
+
+        messages.success(request, "Payment recorded successfully.")
+        return redirect("projections:payments_dashboard")
+
+    return render(
+        request,
+        "projections/add_payment.html",
+        {
+            "project": project,
+            "total_paid": total_paid,
+            "balance_due": balance_due,
+        }
+    )
+
 
 def export_projects_pdf(request):
     """
@@ -164,17 +430,17 @@ def export_projects_pdf(request):
     if not WEASYPRINT_AVAILABLE:
         messages.error(request, "PDF export is not available. Please install WeasyPrint.")
         return redirect("projections:dashboardpro")
-    
+
     # Apply same filters as dashboard
     all_records = ProjectRecord.objects.filter(is_active=True)
     records = all_records.order_by("-project_date")
-    
+
     # Get filter parameters
     company = request.GET.get("company")
     status = request.GET.get("status")
     completion_status = request.GET.get("completion_status")
     year = request.GET.get("year")
-    
+
     # Apply filters
     if company:
         records = records.filter(company=company)
@@ -184,25 +450,25 @@ def export_projects_pdf(request):
         records = records.filter(completion_status=completion_status)
     if year:
         records = records.filter(year=year)
-    
+
     # Calculate totals
     total_won = (
         records.filter(status="WON")
         .aggregate(total=Sum("amount"))
         .get("total") or Decimal("0.00")
     )
-    
+
     total_lost = (
         records.filter(status="LOST")
         .aggregate(total=Sum("amount"))
         .get("total") or Decimal("0.00")
     )
-    
+
     overall_total_amount = (
         all_records.aggregate(total=Sum("amount"))
         .get("total") or Decimal("0.00")
     )
-    
+
     # Get company totals for the filtered set
     company_totals = (
         records.filter(status="WON")
@@ -210,14 +476,14 @@ def export_projects_pdf(request):
         .annotate(total=Sum("amount"))
         .order_by("-total")
     )
-    
+
     # Format amounts with thousand separators
     def format_amount(amount):
         if amount is None:
             return "0.00"
         # Format with thousand separators
         return f"{amount:,.2f}"
-    
+
     # Create PDF context
     context = {
         "records": records,
@@ -239,19 +505,19 @@ def export_projects_pdf(request):
         "total_records": records.count(),
         "format_amount": format_amount,  # Pass function to template
     }
-    
+
     # Render HTML template
     html_string = render_to_string("projections/pdf_export.html", context)
-    
+
     # Create PDF
     html = HTML(string=html_string)
-    
+
     # Create response
     response = HttpResponse(content_type="application/pdf")
     filename = f"project_projects_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
     response["Content-Disposition"] = f"inline; filename={filename}"
-    
+
     # Generate PDF
     html.write_pdf(response)
-    
+
     return response
