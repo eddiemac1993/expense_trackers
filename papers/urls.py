@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path('', views.paper_list, name='paper_list'),
     path('new/', views.create_paper_entry, name='paper_create'),
+    path("papers/<int:entry_id>/edit/", views.edit_paper_entry, name="paper_edit"),
 
     # HTML preview
     path(

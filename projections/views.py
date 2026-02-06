@@ -2,7 +2,8 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Sum
+from django.db.models import Sum, F, DecimalField
+from django.db.models.functions import Coalesce
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib import messages
 from django.http import HttpResponse
@@ -15,7 +16,7 @@ except ImportError:
     WEASYPRINT_AVAILABLE = False
     HTML = None
 
-from .models import ProjectRecord
+from .models import ProjectRecord, Payment
 
 
 @require_http_methods(["GET", "POST"])
@@ -25,6 +26,7 @@ def projection_dashboard(request):
     - GET: list records, filters, totals, charts
     - POST: create new project record
     """
+
     # =========================
     # HANDLE CREATE (POST)
     # =========================
@@ -57,10 +59,7 @@ def projection_dashboard(request):
             amount=request.POST.get("amount"),
             project_date=project_date,
             status=request.POST.get("status"),
-            completion_status=request.POST.get(
-                "completion_status",
-                "PENDING_EVALUATION"
-            ),
+            completion_status=request.POST.get("completion_status", "PENDING_EVALUATION"),
         )
 
         messages.success(request, "Project record added successfully.")
@@ -70,16 +69,19 @@ def projection_dashboard(request):
     # HANDLE DISPLAY (GET)
     # =========================
     all_records = ProjectRecord.objects.filter(is_active=True)
+
     overall_total_amount = (
-        all_records.aggregate(total=Sum("amount"))
-        .get("total") or Decimal("0.00")
+        all_records.aggregate(total=Sum("amount")).get("total") or Decimal("0.00")
     )
+
     records = all_records.order_by("-project_date")
+
     companies = (
         all_records.values_list("company", flat=True)
         .distinct()
         .order_by("company")
     )
+
     years = (
         all_records.values_list("year", flat=True)
         .distinct()
@@ -111,11 +113,20 @@ def projection_dashboard(request):
         .aggregate(total=Sum("amount"))
         .get("total") or Decimal("0.00")
     )
+
     total_lost = (
         records.filter(status="LOST")
         .aggregate(total=Sum("amount"))
         .get("total") or Decimal("0.00")
     )
+
+    # ✅ NEW: total pending
+    total_pending = (
+        records.filter(status="PENDING")
+        .aggregate(total=Sum("amount"))
+        .get("total") or Decimal("0.00")
+    )
+
     company_totals = (
         records.filter(status="WON")
         .values("company")
@@ -130,8 +141,9 @@ def projection_dashboard(request):
         "company_totals": company_totals,
         "total_won": total_won,
         "total_lost": total_lost,
+        "total_pending": total_pending,  # ✅ pass to template
         "overall_total_amount": overall_total_amount,
-        "weasyprint_available": WEASYPRINT_AVAILABLE,  # Pass to template
+        "weasyprint_available": WEASYPRINT_AVAILABLE,
     })
 
 
@@ -140,9 +152,7 @@ def project_detail(request, pk):
     Project detail page
     """
     project = get_object_or_404(ProjectRecord, pk=pk, is_active=True)
-    return render(request, "projections/project_detail.html", {
-        "project": project
-    })
+    return render(request, "projections/project_detail.html", {"project": project})
 
 
 @require_POST
@@ -156,14 +166,6 @@ def archive_project(request, pk):
     messages.success(request, "Project record archived successfully.")
     return redirect("projections:dashboardpro")
 
-from decimal import Decimal
-
-from django.shortcuts import render
-from django.db.models import Sum, F, DecimalField
-from django.db.models.functions import Coalesce
-
-from .models import ProjectRecord
-
 
 def payments_dashboard(request):
     """
@@ -172,46 +174,35 @@ def payments_dashboard(request):
     - Correct decimal precision (2dp)
     - Print-friendly
     """
-
     projects = (
         ProjectRecord.objects
-        .filter(is_active=True, status='WON')
+        .filter(is_active=True, status="WON")
         .annotate(
             paid_amount=Coalesce(
-                Sum('payments__amount_paid'),
-                Decimal('0.00'),
-                output_field=DecimalField(max_digits=14, decimal_places=2)
+                Sum("payments__amount_paid"),
+                Decimal("0.00"),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
             ),
-            outstanding_amount=F('amount') - Coalesce(
-                Sum('payments__amount_paid'),
-                Decimal('0.00'),
-                output_field=DecimalField(max_digits=14, decimal_places=2)
-            )
+            outstanding_amount=F("amount") - Coalesce(
+                Sum("payments__amount_paid"),
+                Decimal("0.00"),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            ),
         )
-        .order_by('-project_date')
+        .order_by("-project_date")
     )
 
     totals = projects.aggregate(
-        total_projects_value=Sum('amount'),
-        total_paid=Sum('paid_amount'),
-        total_balance=Sum('outstanding_amount')
+        total_projects_value=Sum("amount"),
+        total_paid=Sum("paid_amount"),
+        total_balance=Sum("outstanding_amount"),
     )
 
     return render(
         request,
-        'projections/payments_dashboard.html',
-        {
-            'projects': projects,
-            'totals': totals,
-        }
+        "projections/payments_dashboard.html",
+        {"projects": projects, "totals": totals},
     )
-
-from decimal import Decimal
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from django.db.models import Sum
-
-from .models import ProjectRecord, Payment
 
 
 def project_payments(request, pk):
@@ -263,6 +254,7 @@ def project_payments(request, pk):
         }
     )
 
+
 def edit_payment(request, payment_id):
     payment = get_object_or_404(Payment, pk=payment_id)
     project = payment.project
@@ -301,10 +293,7 @@ def edit_payment(request, payment_id):
         payment.save()
 
         messages.success(request, "Payment updated successfully.")
-        return redirect(
-            "projections:project_payments",
-            pk=project.pk
-        )
+        return redirect("projections:project_payments", pk=project.pk)
 
     return render(
         request,
@@ -316,38 +305,38 @@ def edit_payment(request, payment_id):
         }
     )
 
+
 def payments_dashboard_pdf(request):
     """
     Export Payments & Outstanding Dashboard to PDF
     (WON projects only)
     """
-
     if not WEASYPRINT_AVAILABLE:
         messages.error(request, "PDF export is not available. Please install WeasyPrint.")
         return redirect("projections:payments_dashboard")
 
     projects = (
         ProjectRecord.objects
-        .filter(is_active=True, status='WON')
+        .filter(is_active=True, status="WON")
         .annotate(
             paid_amount=Coalesce(
-                Sum('payments__amount_paid'),
-                Decimal('0.00'),
-                output_field=DecimalField(max_digits=14, decimal_places=2)
+                Sum("payments__amount_paid"),
+                Decimal("0.00"),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
             ),
-            outstanding_amount=F('amount') - Coalesce(
-                Sum('payments__amount_paid'),
-                Decimal('0.00'),
-                output_field=DecimalField(max_digits=14, decimal_places=2)
-            )
+            outstanding_amount=F("amount") - Coalesce(
+                Sum("payments__amount_paid"),
+                Decimal("0.00"),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            ),
         )
-        .order_by('-project_date')
+        .order_by("-project_date")
     )
 
     totals = projects.aggregate(
-        total_projects_value=Sum('amount'),
-        total_paid=Sum('paid_amount'),
-        total_balance=Sum('outstanding_amount')
+        total_projects_value=Sum("amount"),
+        total_paid=Sum("paid_amount"),
+        total_balance=Sum("outstanding_amount"),
     )
 
     context = {
@@ -356,11 +345,7 @@ def payments_dashboard_pdf(request):
         "generated_on": datetime.now().strftime("%d %B %Y %H:%M"),
     }
 
-    html_string = render_to_string(
-        "projections/payments_dashboard_pdf.html",
-        context
-    )
-
+    html_string = render_to_string("projections/payments_dashboard_pdf.html", context)
     html = HTML(string=html_string)
 
     response = HttpResponse(content_type="application/pdf")
@@ -369,13 +354,6 @@ def payments_dashboard_pdf(request):
 
     html.write_pdf(response)
     return response
-
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from decimal import Decimal
-
-from .models import ProjectRecord, Payment
 
 
 def add_payment(request, pk):
@@ -431,7 +409,6 @@ def export_projects_pdf(request):
         messages.error(request, "PDF export is not available. Please install WeasyPrint.")
         return redirect("projections:dashboardpro")
 
-    # Apply same filters as dashboard
     all_records = ProjectRecord.objects.filter(is_active=True)
     records = all_records.order_by("-project_date")
 
@@ -451,7 +428,7 @@ def export_projects_pdf(request):
     if year:
         records = records.filter(year=year)
 
-    # Calculate totals
+    # Calculate totals (filtered set)
     total_won = (
         records.filter(status="WON")
         .aggregate(total=Sum("amount"))
@@ -464,12 +441,19 @@ def export_projects_pdf(request):
         .get("total") or Decimal("0.00")
     )
 
+    # ✅ NEW: total pending (filtered set)
+    total_pending = (
+        records.filter(status="PENDING")
+        .aggregate(total=Sum("amount"))
+        .get("total") or Decimal("0.00")
+    )
+
+    # Overall total (all active projects, not filter-based)
     overall_total_amount = (
         all_records.aggregate(total=Sum("amount"))
         .get("total") or Decimal("0.00")
     )
 
-    # Get company totals for the filtered set
     company_totals = (
         records.filter(status="WON")
         .values("company")
@@ -477,23 +461,28 @@ def export_projects_pdf(request):
         .order_by("-total")
     )
 
-    # Format amounts with thousand separators
     def format_amount(amount):
         if amount is None:
             return "0.00"
-        # Format with thousand separators
         return f"{amount:,.2f}"
 
-    # Create PDF context
     context = {
         "records": records,
+
         "total_won": total_won,
         "total_won_formatted": format_amount(total_won),
+
+        "total_pending": total_pending,
+        "total_pending_formatted": format_amount(total_pending),
+
         "total_lost": total_lost,
         "total_lost_formatted": format_amount(total_lost),
+
         "overall_total_amount": overall_total_amount,
         "overall_total_formatted": format_amount(overall_total_amount),
+
         "company_totals": company_totals,
+
         "filter_summary": {
             "company": company,
             "status": status,
@@ -503,21 +492,15 @@ def export_projects_pdf(request):
         "generated_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "filter_applied": any([company, status, completion_status, year]),
         "total_records": records.count(),
-        "format_amount": format_amount,  # Pass function to template
+        "format_amount": format_amount,
     }
 
-    # Render HTML template
     html_string = render_to_string("projections/pdf_export.html", context)
-
-    # Create PDF
     html = HTML(string=html_string)
 
-    # Create response
     response = HttpResponse(content_type="application/pdf")
     filename = f"project_projects_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
     response["Content-Disposition"] = f"inline; filename={filename}"
 
-    # Generate PDF
     html.write_pdf(response)
-
     return response

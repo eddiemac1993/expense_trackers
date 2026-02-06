@@ -27,8 +27,8 @@
             position: relative; /* Essential for absolute positioning of the ID badge */
         }
 
-        .container { 
-            width: 100%; 
+        .container {
+            width: 100%;
             position: relative;
             padding-top: 10px;
         }
@@ -36,7 +36,7 @@
         /* The "Outside Boundary" Identification Styling */
         .outside-id-badge {
             position: absolute;
-            top: -40px; 
+            top: -40px;
             right: 0;
             font-size: 20px;
             font-weight: 900;
@@ -128,7 +128,7 @@
 
         @media print {
             .no-print { display: none; }
-            .outside-id-badge { top: -45px; } 
+            .outside-id-badge { top: -45px; }
         }
     </style>
 </head>
@@ -180,7 +180,7 @@
                 </td>
                 <td>
                     <span class="meta-label">Valid Until</span>
-                    <span class="meta-value">{{ entry.expiry_date|default:"14 Days from Issue" }}</span>
+                    <span class="meta-value">{{ entry.expiry_date|default:"30 Days from Issue" }}</span>
                 </td>
                 <td class="text-right">
                     <span class="meta-label">Total Amount (ZMW)</span>

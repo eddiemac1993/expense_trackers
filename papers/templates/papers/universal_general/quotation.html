@@ -226,7 +226,7 @@
                 {% endif %}
             {% endif %}
         </div>
-        
+
         <div class="company-block">
             <h1>{{ entry.company.name }}</h1>
             <p>{{ entry.company.address }}</p>
@@ -245,7 +245,7 @@
             <td class="label">Date:</td>
             <td>{{ entry.date|date:"d M Y" }}</td>
             <td class="label">Valid Until:</td>
-            <td>{{ entry.valid_until|date:"d M Y"|default:"7 Days from issue" }}</td>
+            <td>{{ entry.valid_until|date:"d M Y"|default:"60 Days from issue" }}</td>
         </tr>
         <tr>
             <td class="label">Client:</td>
@@ -301,7 +301,7 @@
     <!-- NOTES -->
     <div class="notes">
         <strong>Notes & Terms:</strong><br>
-        • Prices quoted are valid for {{ entry.validity_days|default:"7" }} days.<br>
+        • Prices quoted are valid for {{ entry.validity_days|default:"60" }} days.<br>
         • Delivery/Completion: Subject to availability and confirmation.<br>
         • Please refer to the reference number above for all inquiries.
     </div>

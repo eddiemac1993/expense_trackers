@@ -44,6 +44,49 @@ def create_paper_entry(request):
     })
 
 
+def edit_paper_entry(request, entry_id):
+    entry = get_object_or_404(PaperEntry, id=entry_id)
+    client = entry.client
+
+    if request.method == "POST":
+        entry_form = PaperEntryForm(request.POST, instance=entry)
+        client_form = ClientForm(request.POST, instance=client)
+        formset = PaperItemFormSet(request.POST, instance=entry)
+
+        if entry_form.is_valid() and client_form.is_valid() and formset.is_valid():
+            client_form.save()
+            entry = entry_form.save()
+
+            # Save items (including deletions)
+            items = formset.save(commit=False)
+
+            # Delete items marked for deletion
+            for obj in formset.deleted_objects:
+                obj.delete()
+
+            # Save/Update remaining items
+            for item in items:
+                item.entry = entry
+                item.save()
+
+            # Recalculate totals after edits
+            entry.calculate_totals()
+            entry.save()
+
+            return redirect("paper_list")
+    else:
+        entry_form = PaperEntryForm(instance=entry)
+        client_form = ClientForm(instance=client)
+        formset = PaperItemFormSet(instance=entry)
+
+    return render(request, "papers/entry_form.html", {
+        "form": entry_form,
+        "client_form": client_form,
+        "formset": formset,
+        "is_edit": True,
+        "entry": entry,
+    })
+
 def paper_list(request):
     entries = PaperEntry.objects.all().order_by('-created_at')
     return render(request, 'papers/paper_list.html', {'entries': entries})

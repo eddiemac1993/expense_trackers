@@ -72,31 +72,30 @@
                 Commercial & execution performance summary
             </div>
         </div>
-<!-- In the button group section -->
-<div class="d-flex gap-2">
-    <a href="/" class="btn btn-outline-secondary btn-sm">← Back</a>
 
-    <button class="btn btn-primary btn-sm"
-            data-bs-toggle="modal"
-            data-bs-target="#addProjectModal">
-        + Add Project
-    </button>
+        <!-- In the button group section -->
+        <div class="d-flex gap-2">
+            <a href="/" class="btn btn-outline-secondary btn-sm">← Back</a>
 
-    <a href="{% url 'projections:export_pdf' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-       class="btn btn-success btn-sm" target="_blank">
-        📄 Export PDF
-    </a>
+            <button class="btn btn-primary btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addProjectModal">
+                + Add Project
+            </button>
 
-    <button onclick="window.print()" class="btn btn-outline-primary btn-sm">
-        Print
-    </button>
-</div>
+            <a href="{% url 'projections:export_pdf' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+               class="btn btn-success btn-sm" target="_blank">
+                📄 Export PDF
+            </a>
 
-<a href="{% url 'projections:payments_dashboard' %}"
-   class="btn btn-outline-primary">
-    Payments Dashboard
-</a>
+            <button onclick="window.print()" class="btn btn-outline-primary btn-sm">
+                Print
+            </button>
 
+            <a href="{% url 'projections:payments_dashboard' %}"
+               class="btn btn-outline-primary btn-sm">
+                Payments Dashboard
+            </a>
         </div>
     </div>
 
@@ -183,14 +182,23 @@
 
     <!-- SUMMARY -->
     <div class="row mb-3">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="card p-3">
                 <div class="summary text-success">
                     Total WON: ZMW {{ total_won|floatformat:2|intcomma }}
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
+
+        <div class="col-md-4">
+            <div class="card p-3">
+                <div class="summary text-warning">
+                    Total PENDING: ZMW {{ total_pending|floatformat:2|intcomma }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
             <div class="card p-3">
                 <div class="summary text-danger">
                     Total LOST: ZMW {{ total_lost|floatformat:2|intcomma }}
