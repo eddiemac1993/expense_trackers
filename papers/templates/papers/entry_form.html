@@ -40,11 +40,6 @@
                 {% if form.tax_percentage.errors %}<div class="text-danger small">{{ form.tax_percentage.errors }}</div>{% endif %}
             </div>
 
-            <div class="col-md-4">
-                {{ form.prepared_by.label_tag }}
-                {{ form.prepared_by }}
-                {% if form.prepared_by.errors %}<div class="text-danger small">{{ form.prepared_by.errors }}</div>{% endif %}
-            </div>
         </div>
 
         <!-- Optional extra fields if your PaperEntryForm includes them -->
@@ -72,50 +67,29 @@
         <hr>
         <h5>Client</h5>
 
-        {# If your PaperEntryForm no longer has client select (because you create/edit via ClientForm),
-           this block can remain; it will simply render nothing if form.client doesn't exist. #}
-        {% if form.client %}
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <label class="form-label">Select Existing Client</label>
-                {{ form.client }}
-                {% if form.client.errors %}<div class="text-danger small">{{ form.client.errors }}</div>{% endif %}
-            </div>
-        </div>
 
-        <p class="text-muted mb-2">Or enter new client details below</p>
-        {% endif %}
 
-        <div class="row mb-3">
-            <div class="col-md-6">
-                {{ client_form.name.label_tag }}
-                {{ client_form.name }}
-                {% if client_form.name.errors %}<div class="text-danger small">{{ client_form.name.errors }}</div>{% endif %}
-            </div>
-            <div class="col-md-6">
-                {{ client_form.contact_person.label_tag }}
-                {{ client_form.contact_person }}
-                {% if client_form.contact_person.errors %}<div class="text-danger small">{{ client_form.contact_person.errors }}</div>{% endif %}
-            </div>
-        </div>
+        {# NEW: client details are optional + collapsible #}
+        <details class="mb-3">
+            <summary class="text-muted" style="cursor:pointer;">
+                Add New Client (Optional) — leave blank to use <strong>Walk-In Client</strong>
+            </summary>
 
-        <div class="row mb-3">
-            <div class="col-md-4">
-                {{ client_form.phone.label_tag }}
-                {{ client_form.phone }}
-                {% if client_form.phone.errors %}<div class="text-danger small">{{ client_form.phone.errors }}</div>{% endif %}
+            <div class="mt-3">
+                <p class="text-muted mb-2">Only fill <strong>Name</strong> if you want to create a new client. The rest is optional.</p>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        {{ client_form.name.label_tag }}
+                        {{ client_form.name }}
+                        {% if client_form.name.errors %}<div class="text-danger small">{{ client_form.name.errors }}</div>{% endif %}
+                    </div>
+            
+                </div>
+
+
             </div>
-            <div class="col-md-4">
-                {{ client_form.email.label_tag }}
-                {{ client_form.email }}
-                {% if client_form.email.errors %}<div class="text-danger small">{{ client_form.email.errors }}</div>{% endif %}
-            </div>
-            <div class="col-md-4">
-                {{ client_form.address.label_tag }}
-                {{ client_form.address }}
-                {% if client_form.address.errors %}<div class="text-danger small">{{ client_form.address.errors }}</div>{% endif %}
-            </div>
-        </div>
+        </details>
 
         <!-- ================= ITEMS ================= -->
         <hr>
@@ -251,10 +225,6 @@ function handleActions(e) {
     if (e.target.id === 'add-row') {
         const tbody = document.querySelector('#items-table tbody');
 
-        // Django formset management TOTAL_FORMS
-        // NOTE: Your prefix must match the formset prefix.
-        // If you didn't set a custom prefix, it defaults to the related_name ('items') or 'form'.
-        // Your earlier JS uses 'id_items-TOTAL_FORMS', so we keep it consistent.
         const totalForms = document.getElementById('id_items-TOTAL_FORMS');
         if (!totalForms) {
             alert("Could not find TOTAL_FORMS input. Ensure your formset prefix is 'items'.");
@@ -263,7 +233,6 @@ function handleActions(e) {
 
         const index = parseInt(totalForms.value, 10);
 
-        // Clone the FIRST ROW as template (safe if at least one form exists)
         const templateRow = tbody.querySelector('tr.item-row');
         if (!templateRow) {
             alert("No template row found in the items table.");
@@ -272,31 +241,24 @@ function handleActions(e) {
 
         const newRow = templateRow.cloneNode(true);
 
-        // Clear values + update names/ids to new index
-        // Also clear the hidden id field and uncheck DELETE.
         newRow.querySelectorAll('input, textarea, select').forEach(input => {
-            // Hidden PK field (id) should be cleared so Django creates a new object
             if (input.name && input.name.endsWith('-id')) {
                 input.value = '';
                 return;
             }
 
-            // DELETE checkbox should be unchecked
             if (input.name && input.name.endsWith('-DELETE')) {
                 input.checked = false;
             } else {
-                // clear user-input fields
                 if (input.type !== 'hidden' && input.type !== 'checkbox') {
                     input.value = '';
                 }
             }
 
-            // Update name/id attributes to new index
             if (input.name) input.name = input.name.replace(/-\d+-/g, `-${index}-`);
             if (input.id) input.id = input.id.replace(/-\d+-/g, `-${index}-`);
         });
 
-        // Ensure row is visible (in case template row was hidden by delete)
         newRow.classList.remove('d-none');
         newRow.style.display = '';
 
@@ -313,7 +275,6 @@ function handleActions(e) {
 
         const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
 
-        // If this is an existing DB row (has delete checkbox), mark DELETE and hide row.
         if (deleteCheckbox) {
             deleteCheckbox.checked = true;
             row.classList.add('d-none');
@@ -321,12 +282,7 @@ function handleActions(e) {
             return;
         }
 
-        // If it's a newly added row (no delete checkbox), physically remove it
         row.remove();
-
-        // OPTIONAL: keep TOTAL_FORMS consistent is tricky after deletes.
-        // Django can still validate if TOTAL_FORMS is accurate.
-        // We'll NOT decrement TOTAL_FORMS to avoid index collisions.
         calculateTotals();
     }
 }
