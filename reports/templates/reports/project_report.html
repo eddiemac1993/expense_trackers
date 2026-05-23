@@ -20,7 +20,7 @@
         }
 
         .container{
-            max-width:1400px;
+            max-width:1500px;
             margin:auto;
         }
 
@@ -69,10 +69,6 @@
             background:#6b7280;
         }
 
-        .clear-btn:hover{
-            background:#4b5563;
-        }
-
         .edit-btn{
             background:#2563eb;
             padding:8px 12px;
@@ -114,6 +110,10 @@
         .card-value{
             font-size:24px;
             font-weight:bold;
+        }
+
+        .pending-card{
+            border-left:5px solid #dc2626;
         }
 
         .form-box,
@@ -177,7 +177,7 @@
         table{
             width:100%;
             border-collapse:collapse;
-            min-width:1300px;
+            min-width:1450px;
         }
 
         th{
@@ -201,6 +201,12 @@
         }
 
         .money{
+            font-weight:bold;
+            white-space:nowrap;
+        }
+
+        .pending-money{
+            color:#dc2626;
             font-weight:bold;
             white-space:nowrap;
         }
@@ -295,7 +301,7 @@
     <div class="top-bar">
         <div>
             <h1>Project / Supply Report</h1>
-            <p>Contracts, expenses, profits and payments tracking</p>
+            <p>Contracts, expenses, profits, pending payments and payments tracking</p>
         </div>
 
         <div class="actions">
@@ -335,9 +341,15 @@
             </div>
         </div>
 
+        <div class="card pending-card">
+            <div class="card-title">Total Pending Payment</div>
+            <div class="card-value">
+                ZMW {{ total_pending|floatformat:2|intcomma }}
+            </div>
+        </div>
+
     </div>
 
-    <!-- ADD / EDIT PROJECT FORM -->
     <div class="form-box">
 
         <h2 class="form-title">
@@ -355,71 +367,37 @@
 
                 <div class="form-group">
                     <label>Company</label>
-                    <input
-                        type="text"
-                        name="company"
-                        value="{{ editing_project.company|default:'' }}"
-                        required
-                    >
+                    <input type="text" name="company" value="{{ editing_project.company|default:'' }}" required>
                 </div>
 
                 <div class="form-group">
                     <label>Project / Supply</label>
-                    <input
-                        type="text"
-                        name="project_supply"
-                        value="{{ editing_project.project_supply|default:'' }}"
-                        required
-                    >
+                    <input type="text" name="project_supply" value="{{ editing_project.project_supply|default:'' }}" required>
                 </div>
 
                 <div class="form-group">
                     <label>Client</label>
-                    <input
-                        type="text"
-                        name="client"
-                        value="{{ editing_project.client|default:'' }}"
-                        required
-                    >
+                    <input type="text" name="client" value="{{ editing_project.client|default:'' }}" required>
                 </div>
 
                 <div class="form-group">
                     <label>Start Date</label>
-                    <input
-                        type="date"
-                        name="start_date"
-                        value="{{ editing_project.start_date|date:'Y-m-d' }}"
-                    >
+                    <input type="date" name="start_date" value="{{ editing_project.start_date|date:'Y-m-d' }}">
                 </div>
 
                 <div class="form-group">
                     <label>End Date</label>
-                    <input
-                        type="date"
-                        name="end_date"
-                        value="{{ editing_project.end_date|date:'Y-m-d' }}"
-                    >
+                    <input type="date" name="end_date" value="{{ editing_project.end_date|date:'Y-m-d' }}">
                 </div>
 
                 <div class="form-group">
                     <label>Contract Value</label>
-                    <input
-                        type="number"
-                        step="0.01"
-                        name="contract_value"
-                        value="{{ editing_project.contract_value|default:'' }}"
-                        required
-                    >
+                    <input type="number" step="0.01" name="contract_value" value="{{ editing_project.contract_value|default:'' }}" required>
                 </div>
 
                 <div class="form-group">
                     <label>Paid</label>
-                    <input
-                        type="number"
-                        step="0.01"
-                        name="paid_value"
-                        value="{{ editing_project.paid_value|default:'' }}"
-                    >
+                    <input type="number" step="0.01" name="paid_value" value="{{ editing_project.paid_value|default:'' }}">
                 </div>
 
                 <div class="form-group">
@@ -427,8 +405,8 @@
                     <select name="status" required>
                         <option value="">Select Status</option>
 
-                        <option value="Not Started" {% if editing_project.status == "Not Started" %}selected{% endif %}>
-                            Not Started
+                        <option value="Not started" {% if editing_project.status == "Not started" %}selected{% endif %}>
+                            Not started
                         </option>
 
                         <option value="Started" {% if editing_project.status == "Started" %}selected{% endif %}>
@@ -467,7 +445,6 @@
 
     </div>
 
-    <!-- FILTERS -->
     <div class="filters">
 
         <h2 class="filters-title">Filter Report</h2>
@@ -482,9 +459,7 @@
                         <option value="">All Companies</option>
 
                         {% for company in companies %}
-                            <option value="{{ company }}"
-                                {% if selected_company == company %}selected{% endif %}
-                            >
+                            <option value="{{ company }}" {% if selected_company == company %}selected{% endif %}>
                                 {{ company }}
                             </option>
                         {% endfor %}
@@ -497,9 +472,7 @@
                         <option value="">All Clients</option>
 
                         {% for client in clients %}
-                            <option value="{{ client }}"
-                                {% if selected_client == client %}selected{% endif %}
-                            >
+                            <option value="{{ client }}" {% if selected_client == client %}selected{% endif %}>
                                 {{ client }}
                             </option>
                         {% endfor %}
@@ -512,9 +485,7 @@
                         <option value="">All Statuses</option>
 
                         {% for value, label in statuses %}
-                            <option value="{{ value }}"
-                                {% if selected_status == value %}selected{% endif %}
-                            >
+                            <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>
                                 {{ label }}
                             </option>
                         {% endfor %}
@@ -522,21 +493,36 @@
                 </div>
 
                 <div class="filter-group">
+                    <label>Payment Status</label>
+                    <select name="payment_status">
+                        <option value="">All Payments</option>
+
+                        <option value="pending" {% if selected_payment_status == "pending" %}selected{% endif %}>
+                            Pending Payment
+                        </option>
+
+                        <option value="unpaid" {% if selected_payment_status == "unpaid" %}selected{% endif %}>
+                            Unpaid
+                        </option>
+
+                        <option value="partly_paid" {% if selected_payment_status == "partly_paid" %}selected{% endif %}>
+                            Partly Paid
+                        </option>
+
+                        <option value="fully_paid" {% if selected_payment_status == "fully_paid" %}selected{% endif %}>
+                            Fully Paid
+                        </option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
                     <label>Start Date From</label>
-                    <input
-                        type="date"
-                        name="start_date"
-                        value="{{ selected_start_date }}"
-                    >
+                    <input type="date" name="start_date" value="{{ selected_start_date }}">
                 </div>
 
                 <div class="filter-group">
                     <label>Start Date To</label>
-                    <input
-                        type="date"
-                        name="end_date"
-                        value="{{ selected_end_date }}"
-                    >
+                    <input type="date" name="end_date" value="{{ selected_end_date }}">
                 </div>
 
             </div>
@@ -555,7 +541,6 @@
 
     </div>
 
-    <!-- REPORT TABLE -->
     <div class="table-container">
 
         <table>
@@ -571,6 +556,7 @@
                     <th>Expenses</th>
                     <th>Profit</th>
                     <th>Paid</th>
+                    <th>Pending Payment</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -592,10 +578,7 @@
                     </td>
 
                     <td>
-                        <a
-                            class="expense-link"
-                            href="{% url 'project_expenses' record.id %}"
-                        >
+                        <a class="expense-link" href="{% url 'project_expenses' record.id %}">
                             ZMW {{ record.expense_value|floatformat:2|intcomma }}
                         </a>
                     </td>
@@ -606,6 +589,10 @@
 
                     <td class="money">
                         ZMW {{ record.paid_value|floatformat:2|intcomma }}
+                    </td>
+
+                    <td class="pending-money">
+                        ZMW {{ record.pending_payment_value|floatformat:2|intcomma }}
                     </td>
 
                     <td>
@@ -625,10 +612,7 @@
 
                     <td>
                         <div class="action-buttons">
-                            <a
-                                href="{% url 'project_expenses' record.id %}"
-                                class="btn expense-btn"
-                            >
+                            <a href="{% url 'project_expenses' record.id %}" class="btn expense-btn">
                                 Expenses
                             </a>
                         </div>
@@ -638,7 +622,7 @@
                 {% empty %}
 
                 <tr>
-                    <td colspan="11" class="empty">
+                    <td colspan="12" class="empty">
                         No project records available for the selected filters.
                     </td>
                 </tr>

@@ -1,17 +1,19 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.template.loader import get_template
+from django.db.models import F
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import get_template
 from xhtml2pdf import pisa
 
-from .models import ProjectRecord, ExpenseTag
+from .models import ExpenseTag, ProjectRecord
 
 
 def get_filtered_records(request):
-    records = ProjectRecord.objects.all().order_by("-created_at")
+    records = ProjectRecord.objects.prefetch_related("expenses").all()
 
     company = request.GET.get("company", "")
     client = request.GET.get("client", "")
     status = request.GET.get("status", "")
+    payment_status = request.GET.get("payment_status", "")
     start_date = request.GET.get("start_date", "")
     end_date = request.GET.get("end_date", "")
 
@@ -24,13 +26,28 @@ def get_filtered_records(request):
     if status:
         records = records.filter(status=status)
 
+    if payment_status == "pending":
+        records = records.filter(paid_value__lt=F("contract_value"))
+
+    elif payment_status == "unpaid":
+        records = records.filter(paid_value=0)
+
+    elif payment_status == "partly_paid":
+        records = records.filter(
+            paid_value__gt=0,
+            paid_value__lt=F("contract_value")
+        )
+
+    elif payment_status == "fully_paid":
+        records = records.filter(paid_value__gte=F("contract_value"))
+
     if start_date:
         records = records.filter(start_date__gte=start_date)
 
     if end_date:
         records = records.filter(start_date__lte=end_date)
 
-    return records
+    return records.order_by(F("start_date").asc(nulls_last=True), "created_at")
 
 
 def get_report_context(request):
@@ -40,16 +57,23 @@ def get_report_context(request):
     total_expense = sum(record.expense_value for record in records)
     total_profit = total_contract - total_expense
     total_paid = sum(record.paid_value for record in records)
+    total_pending = total_contract - total_paid
 
-    companies = ProjectRecord.objects.values_list(
-        "company", flat=True
-    ).distinct().order_by("company")
+    companies = (
+        ProjectRecord.objects
+        .values_list("company", flat=True)
+        .distinct()
+        .order_by("company")
+    )
 
-    clients = ProjectRecord.objects.values_list(
-        "client", flat=True
-    ).distinct().order_by("client")
+    clients = (
+        ProjectRecord.objects
+        .values_list("client", flat=True)
+        .distinct()
+        .order_by("client")
+    )
 
-    context = {
+    return {
         "records": records,
         "companies": companies,
         "clients": clients,
@@ -58,6 +82,7 @@ def get_report_context(request):
         "selected_company": request.GET.get("company", ""),
         "selected_client": request.GET.get("client", ""),
         "selected_status": request.GET.get("status", ""),
+        "selected_payment_status": request.GET.get("payment_status", ""),
         "selected_start_date": request.GET.get("start_date", ""),
         "selected_end_date": request.GET.get("end_date", ""),
 
@@ -65,9 +90,8 @@ def get_report_context(request):
         "total_expense": total_expense,
         "total_profit": total_profit,
         "total_paid": total_paid,
+        "total_pending": total_pending,
     }
-
-    return context
 
 
 def project_report(request, project_id=None):
@@ -80,34 +104,42 @@ def project_report(request, project_id=None):
         company = request.POST.get("company")
         project_supply = request.POST.get("project_supply")
         client = request.POST.get("client")
+
         contract_value = request.POST.get("contract_value") or 0
         paid_value = request.POST.get("paid_value") or 0
-        status = request.POST.get("status")
+        status = request.POST.get("status") or "Not started"
+
         start_date = request.POST.get("start_date") or None
         end_date = request.POST.get("end_date") or None
 
         if editing_project:
-            editing_project.company = company
-            editing_project.project_supply = project_supply
-            editing_project.client = client
-            editing_project.contract_value = contract_value
-            editing_project.paid_value = paid_value
-            editing_project.status = status
-            editing_project.start_date = start_date
-            editing_project.end_date = end_date
-            editing_project.save()
-
+            project = editing_project
         else:
-            ProjectRecord.objects.create(
+            project, created = ProjectRecord.objects.get_or_create(
                 company=company,
                 project_supply=project_supply,
                 client=client,
-                contract_value=contract_value,
-                paid_value=paid_value,
-                status=status,
-                start_date=start_date,
-                end_date=end_date,
+                defaults={
+                    "contract_value": contract_value,
+                    "paid_value": paid_value,
+                    "status": status,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                }
             )
+
+            if created:
+                return redirect("project_report")
+
+        project.company = company
+        project.project_supply = project_supply
+        project.client = client
+        project.contract_value = contract_value
+        project.paid_value = paid_value
+        project.status = status
+        project.start_date = start_date
+        project.end_date = end_date
+        project.save()
 
         return redirect("project_report")
 
@@ -130,15 +162,13 @@ def project_expenses(request, project_id):
         reason = request.POST.get("reason")
         tag_name = request.POST.get("tag")
         amount = request.POST.get("amount") or 0
-        notes = request.POST.get("notes")
+        notes = request.POST.get("notes", "")
         date = request.POST.get("date") or None
 
         tag = None
 
         if tag_name:
-            tag, created = ExpenseTag.objects.get_or_create(
-                name=tag_name
-            )
+            tag, created = ExpenseTag.objects.get_or_create(name=tag_name)
 
         project.expenses.create(
             reason=reason,
@@ -150,14 +180,16 @@ def project_expenses(request, project_id):
 
         return redirect("project_expenses", project_id=project.id)
 
-    expenses = project.expenses.all().order_by("-date")
+    expenses = project.expenses.all().order_by("-date", "-created_at")
 
-    context = {
-        "project": project,
-        "expenses": expenses,
-    }
-
-    return render(request, "reports/project_expenses.html", context)
+    return render(
+        request,
+        "reports/project_expenses.html",
+        {
+            "project": project,
+            "expenses": expenses,
+        }
+    )
 
 
 def generate_project_report_pdf(request):

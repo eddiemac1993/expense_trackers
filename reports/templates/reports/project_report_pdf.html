@@ -69,6 +69,10 @@
             font-weight:bold;
         }
 
+        .pending{
+            color:#dc2626;
+        }
+
         .main-table{
             width:100%;
             border-collapse:collapse;
@@ -98,6 +102,12 @@
             white-space:nowrap;
         }
 
+        .pending-money{
+            font-weight:bold;
+            color:#dc2626;
+            white-space:nowrap;
+        }
+
         .status{
             font-weight:bold;
             text-align:center;
@@ -122,21 +132,6 @@
         .totals-row{
             background:#e5e7eb !important;
             font-weight:bold;
-        }
-
-        .signature-section{
-            margin-top:50px;
-            width:100%;
-        }
-
-        .signature-table{
-            width:100%;
-        }
-
-        .signature-table td{
-            border:none;
-            padding-top:40px;
-            font-size:11px;
         }
 
         .footer{
@@ -223,6 +218,18 @@
 
                 </td>
 
+                <td class="summary-card">
+
+                    <div class="summary-title pending">
+                        Total Pending Payment
+                    </div>
+
+                    <div class="summary-value pending">
+                        ZMW {{ total_pending|floatformat:2|intcomma }}
+                    </div>
+
+                </td>
+
             </tr>
 
         </table>
@@ -243,6 +250,7 @@
                 <th>Expenses</th>
                 <th>Profit</th>
                 <th>Paid</th>
+                <th>Pending</th>
                 <th>Status</th>
             </tr>
 
@@ -290,6 +298,10 @@
                     ZMW {{ record.paid_value|floatformat:2|intcomma }}
                 </td>
 
+                <td class="pending-money">
+                    ZMW {{ record.pending_payment_value|floatformat:2|intcomma }}
+                </td>
+
                 <td class="status">
 
                     {% if record.status == "Done" %}
@@ -326,7 +338,7 @@
 
             <tr>
 
-                <td colspan="10" style="text-align:center; padding:20px;">
+                <td colspan="11" style="text-align:center; padding:20px;">
                     No project records available.
                 </td>
 
@@ -357,6 +369,10 @@
                 </td>
 
                 <td>
+                    ZMW {{ total_pending|floatformat:2|intcomma }}
+                </td>
+
+                <td>
                     —
                 </td>
 
@@ -365,10 +381,9 @@
         </tbody>
 
     </table>
+
     <div class="footer">
-
         Generated from Django Project Reporting System
-
     </div>
 
 </body>
