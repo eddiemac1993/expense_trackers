@@ -1,0 +1,657 @@
+{% load humanize %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Project Report</title>
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+        }
+
+        body{
+            font-family:Arial, sans-serif;
+            background:#f3f4f6;
+            padding:20px;
+            color:#111827;
+        }
+
+        .container{
+            max-width:1400px;
+            margin:auto;
+        }
+
+        .top-bar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:25px;
+            flex-wrap:wrap;
+            gap:15px;
+        }
+
+        .top-bar h1{
+            font-size:28px;
+        }
+
+        .top-bar p{
+            color:#6b7280;
+            margin-top:5px;
+        }
+
+        .actions{
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+        }
+
+        .btn{
+            background:#111827;
+            color:white;
+            padding:11px 16px;
+            border-radius:9px;
+            text-decoration:none;
+            font-size:14px;
+            font-weight:bold;
+            border:none;
+            cursor:pointer;
+            display:inline-block;
+        }
+
+        .btn:hover{
+            background:#374151;
+        }
+
+        .clear-btn{
+            background:#6b7280;
+        }
+
+        .clear-btn:hover{
+            background:#4b5563;
+        }
+
+        .edit-btn{
+            background:#2563eb;
+            padding:8px 12px;
+            font-size:12px;
+        }
+
+        .delete-btn{
+            background:#dc2626;
+            padding:8px 12px;
+            font-size:12px;
+        }
+
+        .expense-btn{
+            background:#059669;
+            padding:8px 12px;
+            font-size:12px;
+        }
+
+        .summary{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+            gap:15px;
+            margin-bottom:25px;
+        }
+
+        .card{
+            background:white;
+            padding:20px;
+            border-radius:14px;
+            box-shadow:0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        .card-title{
+            font-size:14px;
+            color:#6b7280;
+            margin-bottom:10px;
+        }
+
+        .card-value{
+            font-size:24px;
+            font-weight:bold;
+        }
+
+        .form-box,
+        .filters{
+            background:white;
+            padding:18px;
+            border-radius:14px;
+            box-shadow:0 2px 10px rgba(0,0,0,0.06);
+            margin-bottom:25px;
+        }
+
+        .form-title,
+        .filters-title{
+            font-size:18px;
+            margin-bottom:15px;
+        }
+
+        .form-grid,
+        .filter-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+            gap:12px;
+        }
+
+        .form-group label,
+        .filter-group label{
+            display:block;
+            font-size:13px;
+            font-weight:bold;
+            margin-bottom:6px;
+            color:#374151;
+        }
+
+        .form-group select,
+        .form-group input,
+        .filter-group select,
+        .filter-group input{
+            width:100%;
+            padding:10px;
+            border:1px solid #d1d5db;
+            border-radius:8px;
+            font-size:14px;
+            background:white;
+        }
+
+        .form-actions,
+        .filter-actions{
+            display:flex;
+            gap:10px;
+            margin-top:15px;
+            flex-wrap:wrap;
+        }
+
+        .table-container{
+            background:white;
+            border-radius:14px;
+            overflow:auto;
+            box-shadow:0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            min-width:1300px;
+        }
+
+        th{
+            background:#111827;
+            color:white;
+            padding:14px;
+            text-align:left;
+            font-size:13px;
+            white-space:nowrap;
+        }
+
+        td{
+            padding:12px 14px;
+            border-bottom:1px solid #e5e7eb;
+            font-size:13px;
+            vertical-align:top;
+        }
+
+        tr:hover{
+            background:#f9fafb;
+        }
+
+        .money{
+            font-weight:bold;
+            white-space:nowrap;
+        }
+
+        .expense-link{
+            color:#2563eb;
+            text-decoration:none;
+            font-weight:bold;
+            white-space:nowrap;
+        }
+
+        .expense-link:hover{
+            text-decoration:underline;
+        }
+
+        .badge{
+            padding:6px 10px;
+            border-radius:30px;
+            font-size:12px;
+            font-weight:bold;
+            display:inline-block;
+            white-space:nowrap;
+        }
+
+        .done{
+            background:#dcfce7;
+            color:#166534;
+        }
+
+        .partial{
+            background:#fef3c7;
+            color:#92400e;
+        }
+
+        .started{
+            background:#dbeafe;
+            color:#1d4ed8;
+        }
+
+        .not-started{
+            background:#fee2e2;
+            color:#991b1b;
+        }
+
+        .empty{
+            text-align:center;
+            padding:30px;
+        }
+
+        .action-buttons{
+            display:flex;
+            gap:6px;
+            flex-wrap:wrap;
+        }
+
+        @media(max-width:768px){
+            body{
+                padding:10px;
+            }
+
+            .top-bar h1{
+                font-size:22px;
+            }
+
+            .card-value{
+                font-size:20px;
+            }
+
+            th, td{
+                padding:10px;
+                font-size:12px;
+            }
+
+            .actions,
+            .form-actions,
+            .filter-actions{
+                width:100%;
+            }
+
+            .btn{
+                width:100%;
+                text-align:center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="top-bar">
+        <div>
+            <h1>Project / Supply Report</h1>
+            <p>Contracts, expenses, profits and payments tracking</p>
+        </div>
+
+        <div class="actions">
+            <a href="{% url 'project_report_pdf' %}?{{ request.GET.urlencode }}" class="btn">
+                Generate PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="summary">
+
+        <div class="card">
+            <div class="card-title">Total Contract Value</div>
+            <div class="card-value">
+                ZMW {{ total_contract|floatformat:2|intcomma }}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Total Expenses</div>
+            <div class="card-value">
+                ZMW {{ total_expense|floatformat:2|intcomma }}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Total Profit</div>
+            <div class="card-value">
+                ZMW {{ total_profit|floatformat:2|intcomma }}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Total Paid</div>
+            <div class="card-value">
+                ZMW {{ total_paid|floatformat:2|intcomma }}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ADD / EDIT PROJECT FORM -->
+    <div class="form-box">
+
+        <h2 class="form-title">
+            {% if editing_project %}
+                Edit Project / Supply
+            {% else %}
+                Add New Project / Supply
+            {% endif %}
+        </h2>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label>Company</label>
+                    <input
+                        type="text"
+                        name="company"
+                        value="{{ editing_project.company|default:'' }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Project / Supply</label>
+                    <input
+                        type="text"
+                        name="project_supply"
+                        value="{{ editing_project.project_supply|default:'' }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Client</label>
+                    <input
+                        type="text"
+                        name="client"
+                        value="{{ editing_project.client|default:'' }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input
+                        type="date"
+                        name="start_date"
+                        value="{{ editing_project.start_date|date:'Y-m-d' }}"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input
+                        type="date"
+                        name="end_date"
+                        value="{{ editing_project.end_date|date:'Y-m-d' }}"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Contract Value</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="contract_value"
+                        value="{{ editing_project.contract_value|default:'' }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Paid</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="paid_value"
+                        value="{{ editing_project.paid_value|default:'' }}"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" required>
+                        <option value="">Select Status</option>
+
+                        <option value="Not Started" {% if editing_project.status == "Not Started" %}selected{% endif %}>
+                            Not Started
+                        </option>
+
+                        <option value="Started" {% if editing_project.status == "Started" %}selected{% endif %}>
+                            Started
+                        </option>
+
+                        <option value="Partial Done" {% if editing_project.status == "Partial Done" %}selected{% endif %}>
+                            Partial Done
+                        </option>
+
+                        <option value="Done" {% if editing_project.status == "Done" %}selected{% endif %}>
+                            Done
+                        </option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn">
+                    {% if editing_project %}
+                        Update Project
+                    {% else %}
+                        Add Project
+                    {% endif %}
+                </button>
+
+                {% if editing_project %}
+                    <a href="{% url 'project_report' %}" class="btn clear-btn">
+                        Cancel Edit
+                    </a>
+                {% endif %}
+            </div>
+
+        </form>
+
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters">
+
+        <h2 class="filters-title">Filter Report</h2>
+
+        <form method="get">
+
+            <div class="filter-grid">
+
+                <div class="filter-group">
+                    <label>Company</label>
+                    <select name="company">
+                        <option value="">All Companies</option>
+
+                        {% for company in companies %}
+                            <option value="{{ company }}"
+                                {% if selected_company == company %}selected{% endif %}
+                            >
+                                {{ company }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Client</label>
+                    <select name="client">
+                        <option value="">All Clients</option>
+
+                        {% for client in clients %}
+                            <option value="{{ client }}"
+                                {% if selected_client == client %}selected{% endif %}
+                            >
+                                {{ client }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select name="status">
+                        <option value="">All Statuses</option>
+
+                        {% for value, label in statuses %}
+                            <option value="{{ value }}"
+                                {% if selected_status == value %}selected{% endif %}
+                            >
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Start Date From</label>
+                    <input
+                        type="date"
+                        name="start_date"
+                        value="{{ selected_start_date }}"
+                    >
+                </div>
+
+                <div class="filter-group">
+                    <label>Start Date To</label>
+                    <input
+                        type="date"
+                        name="end_date"
+                        value="{{ selected_end_date }}"
+                    >
+                </div>
+
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn">
+                    Apply Filter
+                </button>
+
+                <a href="{% url 'project_report' %}" class="btn clear-btn">
+                    Clear Filter
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+    <!-- REPORT TABLE -->
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Project / Supply</th>
+                    <th>Client</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Contract Value</th>
+                    <th>Expenses</th>
+                    <th>Profit</th>
+                    <th>Paid</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for record in records %}
+
+                <tr>
+                    <td>{{ record.company }}</td>
+                    <td>{{ record.project_supply }}</td>
+                    <td>{{ record.client }}</td>
+                    <td>{{ record.start_date|default:"—" }}</td>
+                    <td>{{ record.end_date|default:"—" }}</td>
+
+                    <td class="money">
+                        ZMW {{ record.contract_value|floatformat:2|intcomma }}
+                    </td>
+
+                    <td>
+                        <a
+                            class="expense-link"
+                            href="{% url 'project_expenses' record.id %}"
+                        >
+                            ZMW {{ record.expense_value|floatformat:2|intcomma }}
+                        </a>
+                    </td>
+
+                    <td class="money">
+                        ZMW {{ record.profit_value|floatformat:2|intcomma }}
+                    </td>
+
+                    <td class="money">
+                        ZMW {{ record.paid_value|floatformat:2|intcomma }}
+                    </td>
+
+                    <td>
+                        {% if record.status == "Done" %}
+                            <span class="badge done">{{ record.status }}</span>
+
+                        {% elif record.status == "Partial Done" %}
+                            <span class="badge partial">{{ record.status }}</span>
+
+                        {% elif record.status == "Started" %}
+                            <span class="badge started">{{ record.status }}</span>
+
+                        {% else %}
+                            <span class="badge not-started">{{ record.status }}</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <div class="action-buttons">
+                            <a
+                                href="{% url 'project_expenses' record.id %}"
+                                class="btn expense-btn"
+                            >
+                                Expenses
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="11" class="empty">
+                        No project records available for the selected filters.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+</body>
+</html>

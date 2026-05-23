@@ -148,11 +148,11 @@
 <tr>
     <td>
         <div class="company-name">{{ entry.company.name }}</div>
-        <div class="header-details">
-            {{ entry.company.address|linebreaksbr }}<br>
-            <strong>Tel:</strong> {{ entry.company.phone }}<br>
-            <strong>Email:</strong> {{ entry.company.email }}
-        </div>
+                <div class="header-details">
+                    {{ entry.company.address|linebreaksbr }}<br>
+                    Phone: +260 979 337 246<br>
+                    Mail: cmmchronos@gmail.com
+                </div>
     </td>
     <td class="logo">
         {% if entry.company.logo %}
@@ -172,7 +172,7 @@
 <tr>
     <td>
         <strong>Delivery Note No:</strong> {{ entry.paper_number }}<br>
-        <strong>Date:</strong> {{ entry.date|date:"d M Y" }}
+        <strong>Date:</strong>
     </td>
     <td>
         <strong>Delivered To:</strong><br>
@@ -209,9 +209,7 @@
     <td>
         <div class="signature-line">Received By (Sign & Stamp)</div>
     </td>
-    <td>
-        <div class="signature-line">Date / Time</div>
-    </td>
+
 </tr>
 </table>
 

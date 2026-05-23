@@ -71,7 +71,12 @@
             </a>
         </div>
     </div>
-
+<!-- paper_list.html -->
+<div class="mb-3">
+  <a class="btn btn-outline-primary btn-sm" href="?">All</a>
+  <a class="btn btn-outline-success btn-sm" href="?kind=REAL">Real</a>
+  <a class="btn btn-outline-warning btn-sm" href="?kind=SUPPORT">Supporting</a>
+</div>
     <!-- Main Content Card -->
     <div class="card overflow-hidden">
         <div class="card-body p-0">
@@ -110,16 +115,16 @@
 
                                 <td class="text-center actions-cell">
                                     <div class="d-flex flex-wrap justify-content-center">
-                                        <a href="{% url 'paper_edit' entry.id %}" 
-                                           class="btn btn-sm btn-outline-secondary btn-action" 
+                                        <a href="{% url 'paper_edit' entry.id %}"
+                                           class="btn btn-sm btn-outline-secondary btn-action"
                                            title="Edit Paper (Client + Items)">
                                             Edit
                                         </a>
 
                                         <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-danger btn-action dropdown-toggle" 
-                                                    type="button" 
-                                                    data-bs-toggle="dropdown" 
+                                            <button class="btn btn-sm btn-outline-danger btn-action dropdown-toggle"
+                                                    type="button"
+                                                    data-bs-toggle="dropdown"
                                                     aria-expanded="false">
                                                 PDF
                                             </button>
@@ -175,7 +180,7 @@
     <!-- Navigation Footer -->
     <div class="mt-4 d-flex justify-content-between align-items-center">
         <a href="/" class="btn btn-link text-decoration-none text-muted d-inline-flex align-items-center gap-2 ps-0">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>

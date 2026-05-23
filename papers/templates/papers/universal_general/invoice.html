@@ -250,7 +250,7 @@
                 {% endif %}
             {% endif %}
         </div>
-        
+
         <div class="company-block">
             <h1>{{ entry.company.name }}</h1>
             <p>{{ entry.company.address }}</p>
@@ -267,7 +267,7 @@
     <table class="info-grid">
         <tr>
             <td class="label">Date:</td>
-            <td>{{ entry.date|date:"d M Y" }}</td>
+            <td></td>
         </tr>
         <tr>
             <td class="label">Billed To:</td>
@@ -306,11 +306,11 @@
     <div class="footer-section">
         <div class="bank-info">
             <h4>Bank Details</h4>
-            <strong>Bank Name:</strong> INDO ZAMBIA BANK <br>
+            <strong>Bank Name:</strong> Stanbic Bank <br>
             <strong>Account Name:</strong> UNIVERSAL GENERAL SUPPLIES LTD<br>
-            <strong>Account Number:</strong> 0012030002719<br>
-            <strong>Sort Code:</strong> 090001<br>
-            <strong>SWIFT CODE:</strong> INZAZMLX
+            <strong>Account Number:</strong> 9130004986877<br>
+            <strong>Branch Code:</strong> 040015<br>
+            <strong>SWIFT CODE:</strong> SBICZMLX
         </div>
 
         <div class="totals-container">
@@ -320,8 +320,8 @@
                     <td class="text-right">{{ entry.subtotal|floatformat:2|intcomma }}</td>
                 </tr>
                 <tr>
-                    <td>Tax ({{ entry.tax_percentage }}%)</td>
-                    <td class="text-right">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
+                    <td>Tax (Incl)</td>
+                    <td class="text-right"></td>
                 </tr>
                 <tr class="grand-total">
                     <td>TOTAL DUE</td>
@@ -343,10 +343,10 @@
     <table class="signatures">
         <tr>
             <td>
-                <div class="sig-line">Authorized Signatory</div>
+                <div class="sig-line">Prepared by</div>
             </td>
             <td>
-                <div class="sig-line">Customer Acknowledgement</div>
+                <div class="sig-line">Customer</div>
             </td>
         </tr>
     </table>

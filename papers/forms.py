@@ -7,18 +7,42 @@ class PaperEntryForm(forms.ModelForm):
     class Meta:
         model = PaperEntry
         fields = [
-            'company',
-            'client',
-            'tax_percentage',
-            'prepared_by',
+            "company",
+            "tax_percentage",
+            "prepared_by",
+            "delivered_by",
+            "received_by",
+            "date",
+            "kind",
+            "parent",
         ]
         widgets = {
-            'company': forms.Select(attrs={'class': 'form-select'}),
-            'client': forms.Select(attrs={'class': 'form-select'}),
-            'tax_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'prepared_by': forms.TextInput(attrs={'class': 'form-control'}),
+            "company": forms.Select(attrs={"class": "form-select"}),
+            "tax_percentage": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "prepared_by": forms.TextInput(attrs={"class": "form-control"}),
+            "delivered_by": forms.TextInput(attrs={"class": "form-control"}),
+            "received_by": forms.TextInput(attrs={"class": "form-control"}),
+            "date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+
+            "kind": forms.Select(attrs={"class": "form-select", "id": "id_kind"}),
+            "parent": forms.Select(attrs={"class": "form-select", "id": "id_parent"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["parent"].queryset = PaperEntry.objects.filter(kind=PaperEntry.Kind.REAL)
+        self.fields["parent"].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        kind = cleaned.get("kind")
+        parent = cleaned.get("parent")
+
+        if kind == PaperEntry.Kind.SUPPORTING and not parent:
+            raise forms.ValidationError("Supporting paper must be linked to a Real paper.")
+        if kind == PaperEntry.Kind.REAL:
+            cleaned["parent"] = None
+        return cleaned
 
 class ClientForm(forms.ModelForm):
     class Meta:

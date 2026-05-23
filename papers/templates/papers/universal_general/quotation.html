@@ -243,7 +243,7 @@
     <table class="info-grid">
         <tr>
             <td class="label">Date:</td>
-            <td>{{ entry.date|date:"d M Y" }}</td>
+            <td></td>
             <td class="label">Valid Until:</td>
             <td>{{ entry.valid_until|date:"d M Y"|default:"60 Days from issue" }}</td>
         </tr>
@@ -288,8 +288,8 @@
                 <td class="text-right">{{ entry.subtotal|floatformat:2|intcomma }}</td>
             </tr>
             <tr>
-                <td>Tax ({{ entry.tax_percentage }}%)</td>
-                <td class="text-right">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
+                <td>Tax (Incl)</td>
+                <td class="text-right"></td>
             </tr>
             <tr class="grand-total">
                 <td>TOTAL AMOUNT</td>

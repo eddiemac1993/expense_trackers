@@ -208,7 +208,7 @@
                 {% endif %}
             {% endif %}
         </div>
-        
+
         <div class="company-block">
             <h1>{{ entry.company.name }}</h1>
             <p>{{ entry.company.address }}</p>
@@ -225,7 +225,7 @@
     <table class="info-grid">
         <tr>
             <td class="label">Date:</td>
-            <td>{{ entry.date|date:"d M Y" }}</td>
+            <td></td>
         </tr>
     </table>
 
@@ -234,10 +234,10 @@
         Received with thanks from: <br>
         <strong>{{ entry.client.name }}</strong>
         <br><br>
-        
+
         The sum of: <br>
         <span class="amount-words">
-            {{ entry.total|amount_in_words }} Only
+            {{ entry.total|amount_in_words }}
         </span>
         <br>
 
@@ -246,9 +246,9 @@
             TOTAL: {{ entry.currency_symbol|default:"ZMW" }} {{ entry.total|floatformat:2|intcomma }}
         </div>
         <br>
-        
+
         Being payment for: <br>
-        {{ entry.items.all.0.description }}{% if entry.items.all.count > 1 %} and other items{% endif %} 
+        {{ entry.items.all.0.description }}{% if entry.items.all.count > 1 %} and other items{% endif %}
         <br>
 
         <div class="payment-methods">

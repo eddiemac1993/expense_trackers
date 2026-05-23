@@ -26,6 +26,28 @@
     <form method="post" novalidate>
         {% csrf_token %}
 
+        <!-- ================= TYPE / PARENT ================= -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                {{ form.kind.label_tag }}
+                {{ form.kind }}
+                {% if form.kind.errors %}<div class="text-danger small">{{ form.kind.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-8" id="parent-wrapper">
+                {{ form.parent.label_tag }}
+                {{ form.parent }}
+                {% if form.parent.errors %}<div class="text-danger small">{{ form.parent.errors }}</div>{% endif %}
+                <div class="muted-note">Only required if you select <strong>Supporting</strong>.</div>
+            </div>
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
         <!-- ================= COMPANY / TAX ================= -->
         <div class="row mb-3">
             <div class="col-md-4">
@@ -39,7 +61,6 @@
                 {{ form.tax_percentage }}
                 {% if form.tax_percentage.errors %}<div class="text-danger small">{{ form.tax_percentage.errors }}</div>{% endif %}
             </div>
-
         </div>
 
         <!-- Optional extra fields if your PaperEntryForm includes them -->
@@ -67,9 +88,6 @@
         <hr>
         <h5>Client</h5>
 
-
-
-        {# NEW: client details are optional + collapsible #}
         <details class="mb-3">
             <summary class="text-muted" style="cursor:pointer;">
                 Add New Client (Optional) — leave blank to use <strong>Walk-In Client</strong>
@@ -84,10 +102,7 @@
                         {{ client_form.name }}
                         {% if client_form.name.errors %}<div class="text-danger small">{{ client_form.name.errors }}</div>{% endif %}
                     </div>
-            
                 </div>
-
-
             </div>
         </details>
 
@@ -120,7 +135,6 @@
             <tbody>
             {% for item_form in formset %}
                 <tr class="item-row">
-                    {# IMPORTANT: keep the hidden id field so Django updates instead of duplicating #}
                     {{ item_form.id }}
 
                     <td>
@@ -139,7 +153,6 @@
                     </td>
 
                     <td class="text-center">
-                        {# If formset can_delete, Django will include a DELETE checkbox field #}
                         {% if item_form.DELETE %}
                             <div class="d-none">
                                 {{ item_form.DELETE }}
@@ -191,6 +204,32 @@
 document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('input', calculateTotals);
     document.addEventListener('click', handleActions);
+
+    // show/hide Parent Paper based on kind
+    const kindSelect = document.getElementById('id_kind');
+    const parentWrapper = document.getElementById('parent-wrapper');
+    const parentSelect = document.getElementById('id_parent');
+
+    function toggleParent() {
+        const isSupporting = kindSelect && kindSelect.value === "SUPPORT";
+        if (!parentWrapper) return;
+
+        if (isSupporting) {
+            parentWrapper.style.display = '';
+        } else {
+            parentWrapper.style.display = 'none';
+            if (parentSelect) parentSelect.value = '';
+        }
+    }
+
+    if (kindSelect) {
+        kindSelect.addEventListener('change', toggleParent);
+        toggleParent();
+    } else if (parentWrapper) {
+        // If kind field isn't present for some reason, hide parent to avoid confusion
+        parentWrapper.style.display = 'none';
+    }
+
     calculateTotals();
 });
 
@@ -198,7 +237,6 @@ function calculateTotals() {
     let subtotal = 0;
 
     document.querySelectorAll('#items-table tbody tr.item-row').forEach(row => {
-        // Skip rows that are marked for deletion
         const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
         if (deleteCheckbox && deleteCheckbox.checked) return;
 

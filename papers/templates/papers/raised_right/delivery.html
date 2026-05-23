@@ -27,8 +27,8 @@
             position: relative; /* Essential for absolute positioning of the ID badge */
         }
 
-        .container { 
-            width: 100%; 
+        .container {
+            width: 100%;
             position: relative;
             padding-top: 10px;
         }
@@ -36,7 +36,7 @@
         /* The "Outside Boundary" Identification Styling */
         .outside-id-badge {
             position: absolute;
-            top: -40px; 
+            top: -40px;
             right: 0;
             font-size: 20px;
             font-weight: 900;
@@ -131,7 +131,7 @@
 
         @media print {
             .no-print { display: none; }
-            .outside-id-badge { top: -45px; } 
+            .outside-id-badge { top: -45px; }
         }
     </style>
 </head>
@@ -179,16 +179,13 @@
                 </td>
                 <td>
                     <span class="meta-label">Delivery Date</span>
-                    <span class="meta-value">{{ entry.date|date:"d M Y" }}</span>
+                    <span class="meta-value"></span>
                 </td>
                 <td>
                     <span class="meta-label">Reference / P.O.</span>
-                    <span class="meta-value">{{ entry.reference_number|default:"N/A" }}</span>
+                    <span class="meta-value"></span>
                 </td>
-                <td class="text-right">
-                    <span class="meta-label">Confirmation</span>
-                    <span class="meta-value uppercase">Pending Signature</span>
-                </td>
+
             </tr>
         </table>
     </div>
@@ -255,16 +252,11 @@
             <tr>
                 <td width="33%">
                     <div class="signature-space">
-                        <span class="bold">Released By</span><br>
+                        <span class="bold">Delivered By</span><br>
                         <span class="text-muted uppercase" style="font-size: 8px;">For {{ entry.company.name }}</span>
                     </div>
                 </td>
-                <td width="33%">
-                    <div class="signature-space" style="margin: 0 auto;">
-                        <span class="bold">Delivered By</span><br>
-                        <span class="text-muted uppercase" style="font-size: 8px;">Driver's Signature</span>
-                    </div>
-                </td>
+
                 <td width="33%">
                     <div class="signature-space" style="margin-left: auto;">
                         <span class="bold">Received By</span><br>
@@ -273,9 +265,7 @@
                 </td>
             </tr>
         </table>
-        <div style="margin-top: 20px; font-size: 9px; color: #999;" class="text-center">
-            Date: ____/____/20____ &nbsp;&nbsp;&nbsp;&nbsp; Time: ____:____
-        </div>
+
     </div>
 
 </div>

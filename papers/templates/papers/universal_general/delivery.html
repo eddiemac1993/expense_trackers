@@ -197,7 +197,7 @@
                 {% endif %}
             {% endif %}
         </div>
-        
+
         <div class="company-block">
             <h1>{{ entry.company.name }}</h1>
             <p>{{ entry.company.address }}</p>
@@ -214,7 +214,7 @@
     <table class="info-grid">
         <tr>
             <td class="label">Date Issued:</td>
-            <td>{{ entry.date|date:"d M Y" }}</td>
+            <td></td>
         </tr>
         <tr>
             <td class="label">Delivery To:</td>
@@ -263,15 +263,12 @@
                 <div style="font-size: 10px; margin-top: 5px;">Released By (Warehouse)</div>
             </td>
             <td>
-                <div class="sig-line">Customer Acknowledgement</div>
+                <div class="sig-line">Customer</div>
                 <div style="font-size: 10px; margin-top: 5px;">Name, Sign & Stamp</div>
             </td>
         </tr>
     </table>
 
-    <div style="margin-top: 15mm; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #eee; padding-top: 10px;">
-        {{ entry.company.name }} | Delivery Time: ________ : ________
-    </div>
 
 </div>
 </body>

@@ -10,6 +10,7 @@ urlpatterns = [
     path('projections/', include('projections.urls')),
     path('papers/', include('papers.urls')),
     path('documents/', include('documents.urls')),
+    path("reports/", include("reports.urls")),
 ]
 
 if settings.DEBUG:

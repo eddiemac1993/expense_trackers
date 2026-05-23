@@ -132,10 +132,18 @@ def edit_paper_entry(request, entry_id):
         "entry": entry,
     })
 
+# views.py
 def paper_list(request):
-    entries = PaperEntry.objects.all().order_by('-created_at')
-    return render(request, 'papers/paper_list.html', {'entries': entries})
+    kind = request.GET.get("kind", "").strip()  # REAL / SUPPORT
+    qs = PaperEntry.objects.all().order_by("-created_at")
 
+    if kind in ("REAL", "SUPPORT"):
+        qs = qs.filter(kind=kind)
+
+    return render(request, "papers/paper_list.html", {
+        "entries": qs,
+        "kind": kind,
+    })
 
 def paper_preview(request, entry_id, paper_type):
     entry = get_object_or_404(PaperEntry, id=entry_id)

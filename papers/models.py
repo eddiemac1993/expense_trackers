@@ -39,11 +39,23 @@ def get_default_client():
 
 
 class PaperEntry(models.Model):
+    class Kind(models.TextChoices):
+        REAL = "REAL", "Real"
+        SUPPORTING = "SUPPORT", "Supporting"
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
     # allow empty client on the form; database will still have one after save()
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True)
+    kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.REAL)
 
+    # only used when kind == SUPPORT
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="supporting_papers",
+        limit_choices_to={"kind": Kind.REAL},
+    )
     paper_number = models.CharField(max_length=50, unique=True, blank=True)  # KEEP AS BEFORE
     date = models.DateField(default=now)
 

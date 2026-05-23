@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'projections',
     'papers',
     'documents',
+    "reports",
 ]
 
 MIDDLEWARE = [

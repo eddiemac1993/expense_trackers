@@ -148,11 +148,11 @@
 <tr>
     <td>
         <div class="company-name">{{ entry.company.name }}</div>
-        <div class="header-details">
-            {{ entry.company.address|linebreaksbr }}<br>
-            <strong>Tel:</strong> {{ entry.company.phone }}<br>
-            <strong>Email:</strong> {{ entry.company.email }}
-        </div>
+                <div class="header-details">
+                    {{ entry.company.address|linebreaksbr }}<br>
+                    Phone: +260 979 337 246<br>
+                    Mail: cmmchronos@gmail.com
+                </div>
     </td>
     <td class="logo">
         {% if entry.company.logo %}
@@ -178,7 +178,7 @@
     <td>
         <strong>Received From:</strong><br>
         <span style="font-size: 14px; font-weight: bold;">{{ entry.client.name }}</span><br>
-        
+
     </td>
 </tr>
 </table>

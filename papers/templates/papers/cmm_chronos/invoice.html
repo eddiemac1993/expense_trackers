@@ -189,9 +189,11 @@
 <tr>
     <td>
         <div class="company-name">{{ entry.company.name }}</div>
-        <div class="header-details">
-            {{ entry.company.address|linebreaksbr }}<br>
-        </div>
+                <div class="header-details">
+                    {{ entry.company.address|linebreaksbr }}<br>
+                    Phone: +260 979 337 246<br>
+                    Mail: cmmchronos@gmail.com
+                </div>
     </td>
     <td class="logo">
         {% if entry.company.logo %}
@@ -212,7 +214,7 @@
 <tr>
     <td>
         <strong>Invoice No:</strong> {{ entry.paper_number }}<br>
-        <strong>Invoice Date:</strong> {{ entry.date|date:"d M Y" }}
+        <strong>Invoice Date:</strong>
     </td>
     <td>
         <strong>Bill To:</strong><br>
@@ -252,8 +254,8 @@
     <td class="right">{{ entry.subtotal|floatformat:2|intcomma }}</td>
 </tr>
 <tr>
-    <td>TAX ({{ entry.tax_percentage }}%)</td>
-    <td class="right">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
+    <td>TAX </td>
+    <td class="right">Inclusive</td>
 </tr>
 <tr>
     <td><strong>GRAND TOTAL (ZMW)</strong></td>
@@ -293,8 +295,8 @@
 <table class="signature-table">
 <tr>
     <td><div class="signature-line">Prepared By</div></td>
-    <td><div class="signature-line">Authorized Signature</div></td>
-    <td><div class="signature-line">Date</div></td>
+    <td><div class="signature-line"></div></td>
+    <td><div class="signature-line"></div></td>
 </tr>
 </table>
 
