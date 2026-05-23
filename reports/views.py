@@ -13,6 +13,7 @@ def get_filtered_records(request):
     company = request.GET.get("company", "")
     client = request.GET.get("client", "")
     status = request.GET.get("status", "")
+    tax_type = request.GET.get("tax_type", "")
     payment_status = request.GET.get("payment_status", "")
     start_date = request.GET.get("start_date", "")
     end_date = request.GET.get("end_date", "")
@@ -25,6 +26,9 @@ def get_filtered_records(request):
 
     if status:
         records = records.filter(status=status)
+
+    if tax_type:
+        records = records.filter(tax_type=tax_type)
 
     if payment_status == "pending":
         records = records.filter(paid_value__lt=F("contract_value"))
@@ -47,7 +51,10 @@ def get_filtered_records(request):
     if end_date:
         records = records.filter(start_date__lte=end_date)
 
-    return records.order_by(F("start_date").asc(nulls_last=True), "created_at")
+    return records.order_by(
+        F("start_date").asc(nulls_last=True),
+        "created_at"
+    )
 
 
 def get_report_context(request):
@@ -55,7 +62,9 @@ def get_report_context(request):
 
     total_contract = sum(record.contract_value for record in records)
     total_expense = sum(record.expense_value for record in records)
-    total_profit = total_contract - total_expense
+    total_tax = sum(record.tax_amount for record in records)
+    total_net_contract = sum(record.contract_excluding_tax for record in records)
+    total_profit = total_net_contract - total_expense
     total_paid = sum(record.paid_value for record in records)
     total_pending = total_contract - total_paid
 
@@ -78,15 +87,19 @@ def get_report_context(request):
         "companies": companies,
         "clients": clients,
         "statuses": ProjectRecord.STATUS_CHOICES,
+        "tax_types": ProjectRecord.TAX_CHOICES,
 
         "selected_company": request.GET.get("company", ""),
         "selected_client": request.GET.get("client", ""),
         "selected_status": request.GET.get("status", ""),
+        "selected_tax_type": request.GET.get("tax_type", ""),
         "selected_payment_status": request.GET.get("payment_status", ""),
         "selected_start_date": request.GET.get("start_date", ""),
         "selected_end_date": request.GET.get("end_date", ""),
 
         "total_contract": total_contract,
+        "total_net_contract": total_net_contract,
+        "total_tax": total_tax,
         "total_expense": total_expense,
         "total_profit": total_profit,
         "total_paid": total_paid,
@@ -107,6 +120,7 @@ def project_report(request, project_id=None):
 
         contract_value = request.POST.get("contract_value") or 0
         paid_value = request.POST.get("paid_value") or 0
+        tax_type = request.POST.get("tax_type") or "NONE"
         status = request.POST.get("status") or "Not started"
 
         start_date = request.POST.get("start_date") or None
@@ -122,6 +136,7 @@ def project_report(request, project_id=None):
                 defaults={
                     "contract_value": contract_value,
                     "paid_value": paid_value,
+                    "tax_type": tax_type,
                     "status": status,
                     "start_date": start_date,
                     "end_date": end_date,
@@ -136,6 +151,7 @@ def project_report(request, project_id=None):
         project.client = client
         project.contract_value = contract_value
         project.paid_value = paid_value
+        project.tax_type = tax_type
         project.status = status
         project.start_date = start_date
         project.end_date = end_date

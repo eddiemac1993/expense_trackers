@@ -11,6 +11,12 @@ class ProjectRecord(models.Model):
         ("Done", "Done"),
     ]
 
+    TAX_CHOICES = [
+        ("NONE", "No Tax"),
+        ("TOT", "5% TOT"),
+        ("VAT", "16% VAT"),
+    ]
+
     company = models.CharField(max_length=255)
     project_supply = models.CharField("Project / Supply", max_length=255)
     client = models.CharField(max_length=255)
@@ -28,6 +34,12 @@ class ProjectRecord(models.Model):
         max_digits=15,
         decimal_places=2,
         default=0
+    )
+
+    tax_type = models.CharField(
+        max_length=10,
+        choices=TAX_CHOICES,
+        default="NONE"
     )
 
     status = models.CharField(
@@ -49,6 +61,27 @@ class ProjectRecord(models.Model):
         ]
 
     @property
+    def tax_rate(self):
+        if self.tax_type == "TOT":
+            return Decimal("0.05")
+
+        if self.tax_type == "VAT":
+            return Decimal("0.16")
+
+        return Decimal("0.00")
+
+    @property
+    def contract_excluding_tax(self):
+        if self.tax_rate > 0:
+            return self.contract_value / (Decimal("1.00") + self.tax_rate)
+
+        return self.contract_value
+
+    @property
+    def tax_amount(self):
+        return self.contract_value - self.contract_excluding_tax
+
+    @property
     def expense_value(self):
         return sum(
             (expense.amount for expense in self.expenses.all()),
@@ -57,7 +90,7 @@ class ProjectRecord(models.Model):
 
     @property
     def profit_value(self):
-        return self.contract_value - self.expense_value
+        return self.contract_excluding_tax - self.expense_value
 
     @property
     def pending_payment_value(self):

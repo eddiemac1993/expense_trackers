@@ -6,71 +6,74 @@
     <meta charset="UTF-8">
 
     <style>
-
         @page {
             size: A4 landscape;
-            margin: 20px;
+            margin: 14px;
         }
 
         body{
             font-family: Arial, sans-serif;
-            font-size:10px;
+            font-size:8px;
             color:#111827;
         }
 
         .header{
             border-bottom:2px solid #111827;
-            padding-bottom:12px;
-            margin-bottom:20px;
+            padding-bottom:10px;
+            margin-bottom:14px;
         }
 
         .company-name{
-            font-size:24px;
+            font-size:22px;
             font-weight:bold;
             margin-bottom:4px;
         }
 
         .report-title{
-            font-size:16px;
+            font-size:14px;
             color:#374151;
         }
 
         .report-date{
             margin-top:5px;
-            font-size:10px;
+            font-size:9px;
             color:#6b7280;
-        }
-
-        .summary-wrapper{
-            margin-bottom:20px;
         }
 
         .summary-table{
             width:100%;
             border-collapse:separate;
-            border-spacing:10px;
+            border-spacing:6px;
+            margin-bottom:14px;
         }
 
         .summary-card{
             background:#f3f4f6;
             border:1px solid #d1d5db;
-            padding:12px;
-            border-radius:8px;
+            padding:8px;
         }
 
         .summary-title{
-            font-size:10px;
+            font-size:8px;
             color:#6b7280;
-            margin-bottom:6px;
+            margin-bottom:5px;
         }
 
         .summary-value{
-            font-size:15px;
+            font-size:11px;
             font-weight:bold;
         }
 
         .pending{
             color:#dc2626;
+        }
+
+        .tax{
+            color:#d97706;
+        }
+
+        .net{
+            color:#2563eb;
         }
 
         .main-table{
@@ -81,16 +84,17 @@
         .main-table th{
             background:#111827;
             color:white;
-            padding:8px;
+            padding:5px;
             border:1px solid #374151;
-            font-size:10px;
+            font-size:7px;
             text-align:left;
         }
 
         .main-table td{
             border:1px solid #d1d5db;
-            padding:7px;
+            padding:5px;
             vertical-align:top;
+            font-size:7px;
         }
 
         .main-table tr:nth-child(even){
@@ -105,6 +109,18 @@
         .pending-money{
             font-weight:bold;
             color:#dc2626;
+            white-space:nowrap;
+        }
+
+        .tax-money{
+            font-weight:bold;
+            color:#d97706;
+            white-space:nowrap;
+        }
+
+        .net-money{
+            font-weight:bold;
+            color:#2563eb;
             white-space:nowrap;
         }
 
@@ -135,21 +151,19 @@
         }
 
         .footer{
-            margin-top:25px;
+            margin-top:18px;
             border-top:1px solid #d1d5db;
-            padding-top:10px;
-            font-size:9px;
+            padding-top:8px;
+            font-size:8px;
             color:#6b7280;
             text-align:center;
         }
-
     </style>
 </head>
 
 <body>
 
     <div class="header">
-
         <div class="company-name">
             Universal General Supplies Limited
         </div>
@@ -161,85 +175,63 @@
         <div class="report-date">
             Generated on: {% now "d M Y H:i" %}
         </div>
-
     </div>
 
-    <div class="summary-wrapper">
+    <table class="summary-table">
+        <tr>
+            <td class="summary-card">
+                <div class="summary-title">Total Contract Value</div>
+                <div class="summary-value">
+                    ZMW {{ total_contract|floatformat:2|intcomma }}
+                </div>
+            </td>
 
-        <table class="summary-table">
+            <td class="summary-card">
+                <div class="summary-title net">Total Net Contract</div>
+                <div class="summary-value net">
+                    ZMW {{ total_net_contract|floatformat:2|intcomma }}
+                </div>
+            </td>
 
-            <tr>
+            <td class="summary-card">
+                <div class="summary-title tax">Total Tax</div>
+                <div class="summary-value tax">
+                    ZMW {{ total_tax|floatformat:2|intcomma }}
+                </div>
+            </td>
 
-                <td class="summary-card">
+            <td class="summary-card">
+                <div class="summary-title">Total Expenses</div>
+                <div class="summary-value">
+                    ZMW {{ total_expense|floatformat:2|intcomma }}
+                </div>
+            </td>
 
-                    <div class="summary-title">
-                        Total Contract Value
-                    </div>
+            <td class="summary-card">
+                <div class="summary-title">Total Profit</div>
+                <div class="summary-value">
+                    ZMW {{ total_profit|floatformat:2|intcomma }}
+                </div>
+            </td>
 
-                    <div class="summary-value">
-                        ZMW {{ total_contract|floatformat:2|intcomma }}
-                    </div>
+            <td class="summary-card">
+                <div class="summary-title">Total Paid</div>
+                <div class="summary-value">
+                    ZMW {{ total_paid|floatformat:2|intcomma }}
+                </div>
+            </td>
 
-                </td>
-
-                <td class="summary-card">
-
-                    <div class="summary-title">
-                        Total Expenses
-                    </div>
-
-                    <div class="summary-value">
-                        ZMW {{ total_expense|floatformat:2|intcomma }}
-                    </div>
-
-                </td>
-
-                <td class="summary-card">
-
-                    <div class="summary-title">
-                        Total Profit
-                    </div>
-
-                    <div class="summary-value">
-                        ZMW {{ total_profit|floatformat:2|intcomma }}
-                    </div>
-
-                </td>
-
-                <td class="summary-card">
-
-                    <div class="summary-title">
-                        Total Paid
-                    </div>
-
-                    <div class="summary-value">
-                        ZMW {{ total_paid|floatformat:2|intcomma }}
-                    </div>
-
-                </td>
-
-                <td class="summary-card">
-
-                    <div class="summary-title pending">
-                        Total Pending Payment
-                    </div>
-
-                    <div class="summary-value pending">
-                        ZMW {{ total_pending|floatformat:2|intcomma }}
-                    </div>
-
-                </td>
-
-            </tr>
-
-        </table>
-
-    </div>
+            <td class="summary-card">
+                <div class="summary-title pending">Total Pending</div>
+                <div class="summary-value pending">
+                    ZMW {{ total_pending|floatformat:2|intcomma }}
+                </div>
+            </td>
+        </tr>
+    </table>
 
     <table class="main-table">
-
         <thead>
-
             <tr>
                 <th>Company</th>
                 <th>Project / Supply</th>
@@ -247,113 +239,94 @@
                 <th>Start</th>
                 <th>End</th>
                 <th>Contract</th>
+                <th>Tax Type</th>
+                <th>Tax</th>
+                <th>Net</th>
                 <th>Expenses</th>
                 <th>Profit</th>
                 <th>Paid</th>
                 <th>Pending</th>
                 <th>Status</th>
             </tr>
-
         </thead>
 
         <tbody>
-
             {% for record in records %}
+                <tr>
+                    <td>{{ record.company }}</td>
+                    <td>{{ record.project_supply }}</td>
+                    <td>{{ record.client }}</td>
+                    <td>{{ record.start_date|default:"-" }}</td>
+                    <td>{{ record.end_date|default:"-" }}</td>
 
-            <tr>
+                    <td class="money">
+                        ZMW {{ record.contract_value|floatformat:2|intcomma }}
+                    </td>
 
-                <td>
-                    {{ record.company }}
-                </td>
+                    <td>
+                        {{ record.get_tax_type_display }}
+                    </td>
 
-                <td>
-                    {{ record.project_supply }}
-                </td>
+                    <td class="tax-money">
+                        ZMW {{ record.tax_amount|floatformat:2|intcomma }}
+                    </td>
 
-                <td>
-                    {{ record.client }}
-                </td>
+                    <td class="net-money">
+                        ZMW {{ record.contract_excluding_tax|floatformat:2|intcomma }}
+                    </td>
 
-                <td>
-                    {{ record.start_date|default:"-" }}
-                </td>
+                    <td class="money">
+                        ZMW {{ record.expense_value|floatformat:2|intcomma }}
+                    </td>
 
-                <td>
-                    {{ record.end_date|default:"-" }}
-                </td>
+                    <td class="money">
+                        ZMW {{ record.profit_value|floatformat:2|intcomma }}
+                    </td>
 
-                <td class="money">
-                    ZMW {{ record.contract_value|floatformat:2|intcomma }}
-                </td>
+                    <td class="money">
+                        ZMW {{ record.paid_value|floatformat:2|intcomma }}
+                    </td>
 
-                <td class="money">
-                    ZMW {{ record.expense_value|floatformat:2|intcomma }}
-                </td>
+                    <td class="pending-money">
+                        ZMW {{ record.pending_payment_value|floatformat:2|intcomma }}
+                    </td>
 
-                <td class="money">
-                    ZMW {{ record.profit_value|floatformat:2|intcomma }}
-                </td>
-
-                <td class="money">
-                    ZMW {{ record.paid_value|floatformat:2|intcomma }}
-                </td>
-
-                <td class="pending-money">
-                    ZMW {{ record.pending_payment_value|floatformat:2|intcomma }}
-                </td>
-
-                <td class="status">
-
-                    {% if record.status == "Done" %}
-
-                        <span class="done">
-                            {{ record.status }}
-                        </span>
-
-                    {% elif record.status == "Partial Done" %}
-
-                        <span class="partial">
-                            {{ record.status }}
-                        </span>
-
-                    {% elif record.status == "Started" %}
-
-                        <span class="started">
-                            {{ record.status }}
-                        </span>
-
-                    {% else %}
-
-                        <span class="not-started">
-                            {{ record.status }}
-                        </span>
-
-                    {% endif %}
-
-                </td>
-
-            </tr>
+                    <td class="status">
+                        {% if record.status == "Done" %}
+                            <span class="done">{{ record.status }}</span>
+                        {% elif record.status == "Partial Done" %}
+                            <span class="partial">{{ record.status }}</span>
+                        {% elif record.status == "Started" %}
+                            <span class="started">{{ record.status }}</span>
+                        {% else %}
+                            <span class="not-started">{{ record.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
 
             {% empty %}
-
-            <tr>
-
-                <td colspan="11" style="text-align:center; padding:20px;">
-                    No project records available.
-                </td>
-
-            </tr>
-
+                <tr>
+                    <td colspan="14" style="text-align:center; padding:20px;">
+                        No project records available.
+                    </td>
+                </tr>
             {% endfor %}
 
             <tr class="totals-row">
-
-                <td colspan="5">
-                    TOTALS
-                </td>
+                <td colspan="5">TOTALS</td>
 
                 <td>
                     ZMW {{ total_contract|floatformat:2|intcomma }}
+                </td>
+
+                <td>—</td>
+
+                <td>
+                    ZMW {{ total_tax|floatformat:2|intcomma }}
+                </td>
+
+                <td>
+                    ZMW {{ total_net_contract|floatformat:2|intcomma }}
                 </td>
 
                 <td>
@@ -372,14 +345,9 @@
                     ZMW {{ total_pending|floatformat:2|intcomma }}
                 </td>
 
-                <td>
-                    —
-                </td>
-
+                <td>—</td>
             </tr>
-
         </tbody>
-
     </table>
 
     <div class="footer">
