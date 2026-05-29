@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
 
     <style>
+
         @page {
             size: A4 landscape;
             margin: 14px;
@@ -38,6 +39,14 @@
             margin-top:5px;
             font-size:9px;
             color:#6b7280;
+        }
+
+        .section-title{
+            font-size:12px;
+            font-weight:bold;
+            margin-top:20px;
+            margin-bottom:10px;
+            color:#111827;
         }
 
         .summary-table{
@@ -79,6 +88,7 @@
         .main-table{
             width:100%;
             border-collapse:collapse;
+            margin-bottom:20px;
         }
 
         .main-table th{
@@ -145,6 +155,18 @@
             color:#991b1b;
         }
 
+        .submitted{
+            color:#1d4ed8;
+        }
+
+        .awaiting{
+            color:#92400e;
+        }
+
+        .not-awarded{
+            color:#991b1b;
+        }
+
         .totals-row{
             background:#e5e7eb !important;
             font-weight:bold;
@@ -158,12 +180,14 @@
             color:#6b7280;
             text-align:center;
         }
+
     </style>
 </head>
 
 <body>
 
     <div class="header">
+
         <div class="company-name">
             Universal General Supplies Limited
         </div>
@@ -175,63 +199,99 @@
         <div class="report-date">
             Generated on: {% now "d M Y H:i" %}
         </div>
+
     </div>
 
+    <!-- SUMMARY -->
+
     <table class="summary-table">
+
         <tr>
+
             <td class="summary-card">
-                <div class="summary-title">Total Contract Value</div>
+                <div class="summary-title">
+                    Total Contract Value
+                </div>
+
                 <div class="summary-value">
                     ZMW {{ total_contract|floatformat:2|intcomma }}
                 </div>
             </td>
 
             <td class="summary-card">
-                <div class="summary-title net">Total Net Contract</div>
+                <div class="summary-title net">
+                    Total Net Contract
+                </div>
+
                 <div class="summary-value net">
                     ZMW {{ total_net_contract|floatformat:2|intcomma }}
                 </div>
             </td>
 
             <td class="summary-card">
-                <div class="summary-title tax">Total Tax</div>
+                <div class="summary-title tax">
+                    Total Tax
+                </div>
+
                 <div class="summary-value tax">
                     ZMW {{ total_tax|floatformat:2|intcomma }}
                 </div>
             </td>
 
             <td class="summary-card">
-                <div class="summary-title">Total Expenses</div>
+                <div class="summary-title">
+                    Total Expenses
+                </div>
+
                 <div class="summary-value">
                     ZMW {{ total_expense|floatformat:2|intcomma }}
                 </div>
             </td>
 
             <td class="summary-card">
-                <div class="summary-title">Total Profit</div>
+                <div class="summary-title">
+                    Total Profit
+                </div>
+
                 <div class="summary-value">
                     ZMW {{ total_profit|floatformat:2|intcomma }}
                 </div>
             </td>
 
             <td class="summary-card">
-                <div class="summary-title">Total Paid</div>
+                <div class="summary-title">
+                    Total Paid
+                </div>
+
                 <div class="summary-value">
                     ZMW {{ total_paid|floatformat:2|intcomma }}
                 </div>
             </td>
 
             <td class="summary-card">
-                <div class="summary-title pending">Total Pending</div>
+                <div class="summary-title pending">
+                    Total Pending
+                </div>
+
                 <div class="summary-value pending">
                     ZMW {{ total_pending|floatformat:2|intcomma }}
                 </div>
             </td>
+
         </tr>
+
     </table>
 
+    <!-- AWARDED PROJECTS -->
+
+    <div class="section-title">
+        Awarded Projects
+    </div>
+
     <table class="main-table">
+
         <thead>
+
             <tr>
                 <th>Company</th>
                 <th>Project / Supply</th>
@@ -248,72 +308,94 @@
                 <th>Pending</th>
                 <th>Status</th>
             </tr>
+
         </thead>
 
         <tbody>
+
             {% for record in records %}
-                <tr>
-                    <td>{{ record.company }}</td>
-                    <td>{{ record.project_supply }}</td>
-                    <td>{{ record.client }}</td>
-                    <td>{{ record.start_date|default:"-" }}</td>
-                    <td>{{ record.end_date|default:"-" }}</td>
 
-                    <td class="money">
-                        ZMW {{ record.contract_value|floatformat:2|intcomma }}
-                    </td>
+            <tr>
 
-                    <td>
-                        {{ record.get_tax_type_display }}
-                    </td>
+                <td>{{ record.company }}</td>
 
-                    <td class="tax-money">
-                        ZMW {{ record.tax_amount|floatformat:2|intcomma }}
-                    </td>
+                <td>{{ record.project_supply }}</td>
 
-                    <td class="net-money">
-                        ZMW {{ record.contract_excluding_tax|floatformat:2|intcomma }}
-                    </td>
+                <td>{{ record.client }}</td>
 
-                    <td class="money">
-                        ZMW {{ record.expense_value|floatformat:2|intcomma }}
-                    </td>
+                <td>{{ record.start_date|default:"-" }}</td>
 
-                    <td class="money">
-                        ZMW {{ record.profit_value|floatformat:2|intcomma }}
-                    </td>
+                <td>{{ record.end_date|default:"-" }}</td>
 
-                    <td class="money">
-                        ZMW {{ record.paid_value|floatformat:2|intcomma }}
-                    </td>
+                <td class="money">
+                    ZMW {{ record.contract_value|floatformat:2|intcomma }}
+                </td>
 
-                    <td class="pending-money">
-                        ZMW {{ record.pending_payment_value|floatformat:2|intcomma }}
-                    </td>
+                <td>
+                    {{ record.get_tax_type_display }}
+                </td>
 
-                    <td class="status">
-                        {% if record.status == "Done" %}
-                            <span class="done">{{ record.status }}</span>
-                        {% elif record.status == "Partial Done" %}
-                            <span class="partial">{{ record.status }}</span>
-                        {% elif record.status == "Started" %}
-                            <span class="started">{{ record.status }}</span>
-                        {% else %}
-                            <span class="not-started">{{ record.status }}</span>
-                        {% endif %}
-                    </td>
-                </tr>
+                <td class="tax-money">
+                    ZMW {{ record.tax_amount|floatformat:2|intcomma }}
+                </td>
+
+                <td class="net-money">
+                    ZMW {{ record.contract_excluding_tax|floatformat:2|intcomma }}
+                </td>
+
+                <td class="money">
+                    ZMW {{ record.expense_value|floatformat:2|intcomma }}
+                </td>
+
+                <td class="money">
+                    ZMW {{ record.profit_value|floatformat:2|intcomma }}
+                </td>
+
+                <td class="money">
+                    ZMW {{ record.paid_value|floatformat:2|intcomma }}
+                </td>
+
+                <td class="pending-money">
+                    ZMW {{ record.pending_payment_value|floatformat:2|intcomma }}
+                </td>
+
+                <td class="status">
+
+                    {% if record.status == "Done" %}
+                        <span class="done">{{ record.status }}</span>
+
+                    {% elif record.status == "Partial Done" %}
+                        <span class="partial">{{ record.status }}</span>
+
+                    {% elif record.status == "Started" %}
+                        <span class="started">{{ record.status }}</span>
+
+                    {% else %}
+                        <span class="not-started">{{ record.status }}</span>
+
+                    {% endif %}
+
+                </td>
+
+            </tr>
 
             {% empty %}
-                <tr>
-                    <td colspan="14" style="text-align:center; padding:20px;">
-                        No project records available.
-                    </td>
-                </tr>
+
+            <tr>
+
+                <td colspan="14" style="text-align:center; padding:20px;">
+                    No awarded projects available.
+                </td>
+
+            </tr>
+
             {% endfor %}
 
             <tr class="totals-row">
-                <td colspan="5">TOTALS</td>
+
+                <td colspan="5">
+                    TOTALS
+                </td>
 
                 <td>
                     ZMW {{ total_contract|floatformat:2|intcomma }}
@@ -346,8 +428,96 @@
                 </td>
 
                 <td>—</td>
+
             </tr>
+
         </tbody>
+
+    </table>
+
+    <!-- PENDING PROJECTS -->
+
+    <div class="section-title">
+        Pending / Not Yet Awarded Projects
+    </div>
+
+    <table class="main-table">
+
+        <thead>
+
+            <tr>
+                <th>Company</th>
+                <th>Project / Supply</th>
+                <th>Client</th>
+                <th>Submission Date</th>
+                <th>Expected Award</th>
+                <th>Expected Contract</th>
+                <th>Tax Type</th>
+                <th>Status</th>
+                <th>Notes</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for pending in pending_projects %}
+
+            <tr>
+
+                <td>{{ pending.company }}</td>
+
+                <td>{{ pending.project_supply }}</td>
+
+                <td>{{ pending.client }}</td>
+
+                <td>{{ pending.submission_date|default:"-" }}</td>
+
+                <td>{{ pending.expected_award_date|default:"-" }}</td>
+
+                <td class="money">
+                    ZMW {{ pending.contract_value|floatformat:2|intcomma }}
+                </td>
+
+                <td>
+                    {{ pending.get_tax_type_display }}
+                </td>
+
+                <td class="status">
+
+                    {% if pending.status == "Submitted" %}
+                        <span class="submitted">{{ pending.status }}</span>
+
+                    {% elif pending.status == "Awaiting Award" %}
+                        <span class="awaiting">{{ pending.status }}</span>
+
+                    {% else %}
+                        <span class="not-awarded">{{ pending.status }}</span>
+
+                    {% endif %}
+
+                </td>
+
+                <td>
+                    {{ pending.notes|default:"-" }}
+                </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+
+                <td colspan="9" style="text-align:center; padding:20px;">
+                    No pending projects available.
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
     </table>
 
     <div class="footer">

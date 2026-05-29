@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     ExpenseTag,
+    PendingProjectRecord,
     ProjectExpense,
     ProjectRecord,
 )
@@ -112,6 +113,90 @@ class ProjectRecordAdmin(admin.ModelAdmin):
 
     ordering = (
         "start_date",
+        "created_at",
+    )
+
+
+@admin.register(PendingProjectRecord)
+class PendingProjectRecordAdmin(admin.ModelAdmin):
+    list_display = (
+        "company",
+        "project_supply",
+        "client",
+        "submission_date",
+        "expected_award_date",
+        "contract_value",
+        "tax_type",
+        "status",
+        "created_at",
+    )
+
+    list_filter = (
+        "status",
+        "tax_type",
+        "company",
+        "client",
+        "submission_date",
+        "expected_award_date",
+    )
+
+    search_fields = (
+        "company",
+        "project_supply",
+        "client",
+        "notes",
+    )
+
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+
+    fieldsets = (
+        (
+            "Pending Project Details",
+            {
+                "fields": (
+                    "company",
+                    "project_supply",
+                    "client",
+                    "submission_date",
+                    "expected_award_date",
+                    "status",
+                )
+            },
+        ),
+        (
+            "Financial Details",
+            {
+                "fields": (
+                    "contract_value",
+                    "tax_type",
+                )
+            },
+        ),
+        (
+            "Notes",
+            {
+                "fields": (
+                    "notes",
+                )
+            },
+        ),
+        (
+            "System Information",
+            {
+                "fields": (
+                    "created_at",
+                    "updated_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    ordering = (
+        "submission_date",
         "created_at",
     )
 

@@ -24,17 +24,8 @@ class ProjectRecord(models.Model):
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
 
-    contract_value = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
-        default=0
-    )
-
-    paid_value = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
-        default=0
-    )
+    contract_value = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    paid_value = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
     tax_type = models.CharField(
         max_length=10,
@@ -104,6 +95,47 @@ class ProjectRecord(models.Model):
         return f"{self.company} - {self.project_supply}"
 
 
+class PendingProjectRecord(models.Model):
+    STATUS_CHOICES = [
+        ("Submitted", "Submitted"),
+        ("Awaiting Award", "Awaiting Award"),
+        ("Not Awarded", "Not Awarded"),
+        ("Awarded", "Awarded"),
+    ]
+
+    company = models.CharField(max_length=255)
+    project_supply = models.CharField("Project / Supply", max_length=255)
+    client = models.CharField(max_length=255)
+
+    submission_date = models.DateField(null=True, blank=True)
+    expected_award_date = models.DateField(null=True, blank=True)
+
+    contract_value = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    tax_type = models.CharField(
+        max_length=10,
+        choices=ProjectRecord.TAX_CHOICES,
+        default="NONE"
+    )
+
+    status = models.CharField(
+        max_length=50,
+        choices=STATUS_CHOICES,
+        default="Submitted"
+    )
+
+    notes = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["submission_date", "created_at"]
+
+    def __str__(self):
+        return f"{self.company} - {self.project_supply}"
+
+
 class ExpenseTag(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
@@ -124,10 +156,7 @@ class ProjectExpense(models.Model):
     date = models.DateField()
     reason = models.CharField(max_length=255)
 
-    amount = models.DecimalField(
-        max_digits=15,
-        decimal_places=2
-    )
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
 
     tag = models.ForeignKey(
         ExpenseTag,

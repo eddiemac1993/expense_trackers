@@ -6,6 +6,7 @@
     <title>Project Report</title>
 
     <style>
+
         *{
             margin:0;
             padding:0;
@@ -13,14 +14,14 @@
         }
 
         body{
-            font-family:Arial, sans-serif;
+            font-family:Arial,sans-serif;
             background:#f3f4f6;
             padding:20px;
             color:#111827;
         }
 
         .container{
-            max-width:1700px;
+            max-width:1800px;
             margin:auto;
         }
 
@@ -75,6 +76,12 @@
             font-size:12px;
         }
 
+        .award-btn{
+            background:#2563eb;
+            padding:8px 12px;
+            font-size:12px;
+        }
+
         .summary{
             display:grid;
             grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -121,6 +128,12 @@
             margin-bottom:25px;
         }
 
+        .section-title{
+            font-size:22px;
+            margin-bottom:18px;
+            margin-top:10px;
+        }
+
         .form-title,
         .filters-title{
             font-size:18px;
@@ -145,6 +158,7 @@
 
         .form-group select,
         .form-group input,
+        .form-group textarea,
         .filter-group select,
         .filter-group input{
             width:100%;
@@ -153,6 +167,11 @@
             border-radius:8px;
             font-size:14px;
             background:white;
+        }
+
+        .form-group textarea{
+            min-height:90px;
+            resize:vertical;
         }
 
         .form-actions,
@@ -168,12 +187,13 @@
             border-radius:14px;
             overflow:auto;
             box-shadow:0 2px 10px rgba(0,0,0,0.06);
+            margin-bottom:30px;
         }
 
         table{
             width:100%;
             border-collapse:collapse;
-            min-width:1750px;
+            min-width:1800px;
         }
 
         th{
@@ -223,7 +243,6 @@
             color:#2563eb;
             text-decoration:none;
             font-weight:bold;
-            white-space:nowrap;
         }
 
         .badge{
@@ -255,6 +274,21 @@
             color:#991b1b;
         }
 
+        .submitted{
+            background:#dbeafe;
+            color:#1d4ed8;
+        }
+
+        .awaiting{
+            background:#fef3c7;
+            color:#92400e;
+        }
+
+        .not-awarded{
+            background:#fee2e2;
+            color:#991b1b;
+        }
+
         .empty{
             text-align:center;
             padding:30px;
@@ -267,6 +301,7 @@
         }
 
         @media(max-width:768px){
+
             body{
                 padding:10px;
             }
@@ -289,6 +324,7 @@
                 text-align:center;
             }
         }
+
     </style>
 </head>
 
@@ -297,22 +333,30 @@
 <div class="container">
 
     <div class="top-bar">
+
         <div>
             <h1>Project / Supply Report</h1>
-            <p>Contracts, tax, expenses, profits, pending payments and payments tracking</p>
+
+            <p>
+                Contracts, tax, expenses, profits, pending payments and pending awards tracking
+            </p>
         </div>
 
         <div class="actions">
+
             <a href="{% url 'project_report_pdf' %}?{{ request.GET.urlencode }}" class="btn">
                 Generate PDF
             </a>
+
         </div>
+
     </div>
 
     <div class="summary">
 
         <div class="card">
             <div class="card-title">Total Contract Value</div>
+
             <div class="card-value">
                 ZMW {{ total_contract|floatformat:2|intcomma }}
             </div>
@@ -320,6 +364,7 @@
 
         <div class="card net-card">
             <div class="card-title">Total Net Contract</div>
+
             <div class="card-value">
                 ZMW {{ total_net_contract|floatformat:2|intcomma }}
             </div>
@@ -327,6 +372,7 @@
 
         <div class="card tax-card">
             <div class="card-title">Total Tax</div>
+
             <div class="card-value">
                 ZMW {{ total_tax|floatformat:2|intcomma }}
             </div>
@@ -334,6 +380,7 @@
 
         <div class="card">
             <div class="card-title">Total Expenses</div>
+
             <div class="card-value">
                 ZMW {{ total_expense|floatformat:2|intcomma }}
             </div>
@@ -341,6 +388,7 @@
 
         <div class="card">
             <div class="card-title">Total Profit</div>
+
             <div class="card-value">
                 ZMW {{ total_profit|floatformat:2|intcomma }}
             </div>
@@ -348,6 +396,7 @@
 
         <div class="card">
             <div class="card-title">Total Paid</div>
+
             <div class="card-value">
                 ZMW {{ total_paid|floatformat:2|intcomma }}
             </div>
@@ -355,6 +404,7 @@
 
         <div class="card pending-card">
             <div class="card-title">Total Pending Payment</div>
+
             <div class="card-value">
                 ZMW {{ total_pending|floatformat:2|intcomma }}
             </div>
@@ -362,14 +412,12 @@
 
     </div>
 
+    <!-- MAIN PROJECT FORM -->
+
     <div class="form-box">
 
         <h2 class="form-title">
-            {% if editing_project %}
-                Edit Project / Supply
-            {% else %}
-                Add New Project / Supply
-            {% endif %}
+            Add Awarded Project / Supply
         </h2>
 
         <form method="post">
@@ -379,64 +427,64 @@
 
                 <div class="form-group">
                     <label>Company</label>
-                    <input type="text" name="company" value="{{ editing_project.company|default:'' }}" required>
+                    <input type="text" name="company" required>
                 </div>
 
                 <div class="form-group">
                     <label>Project / Supply</label>
-                    <input type="text" name="project_supply" value="{{ editing_project.project_supply|default:'' }}" required>
+                    <input type="text" name="project_supply" required>
                 </div>
 
                 <div class="form-group">
                     <label>Client</label>
-                    <input type="text" name="client" value="{{ editing_project.client|default:'' }}" required>
+                    <input type="text" name="client" required>
                 </div>
 
                 <div class="form-group">
                     <label>Start Date</label>
-                    <input type="date" name="start_date" value="{{ editing_project.start_date|date:'Y-m-d' }}">
+                    <input type="date" name="start_date">
                 </div>
 
                 <div class="form-group">
                     <label>End Date</label>
-                    <input type="date" name="end_date" value="{{ editing_project.end_date|date:'Y-m-d' }}">
+                    <input type="date" name="end_date">
                 </div>
 
                 <div class="form-group">
                     <label>Contract Value</label>
-                    <input type="number" step="0.01" name="contract_value" value="{{ editing_project.contract_value|default:'' }}" required>
+                    <input type="number" step="0.01" name="contract_value" required>
                 </div>
 
                 <div class="form-group">
                     <label>Paid</label>
-                    <input type="number" step="0.01" name="paid_value" value="{{ editing_project.paid_value|default:'' }}">
+                    <input type="number" step="0.01" name="paid_value">
                 </div>
 
                 <div class="form-group">
                     <label>Tax Type</label>
-                    <select name="tax_type" required>
+
+                    <select name="tax_type">
+
                         {% for value, label in tax_types %}
-                            <option value="{{ value }}"
-                                {% if editing_project.tax_type == value %}selected{% endif %}
-                            >
+                            <option value="{{ value }}">
                                 {{ label }}
                             </option>
                         {% endfor %}
+
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label>Status</label>
-                    <select name="status" required>
-                        <option value="">Select Status</option>
+
+                    <select name="status">
 
                         {% for value, label in statuses %}
-                            <option value="{{ value }}"
-                                {% if editing_project.status == value %}selected{% endif %}
-                            >
+                            <option value="{{ value }}">
                                 {{ label }}
                             </option>
                         {% endfor %}
+
                     </select>
                 </div>
 
@@ -444,143 +492,134 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn">
-                    {% if editing_project %}
-                        Update Project
-                    {% else %}
-                        Add Project
-                    {% endif %}
+                    Add Awarded Project
                 </button>
-
-                {% if editing_project %}
-                    <a href="{% url 'project_report' %}" class="btn clear-btn">
-                        Cancel Edit
-                    </a>
-                {% endif %}
             </div>
 
         </form>
 
     </div>
 
-    <div class="filters">
+    <!-- PENDING PROJECT FORM -->
 
-        <h2 class="filters-title">Filter Report</h2>
+    <div class="form-box">
 
-        <form method="get">
+        <h2 class="form-title">
+            Add Pending / Not Yet Awarded Project
+        </h2>
 
-            <div class="filter-grid">
+        <form method="post" action="{% url 'add_pending_project' %}">
+            {% csrf_token %}
 
-                <div class="filter-group">
+            <div class="form-grid">
+
+                <div class="form-group">
                     <label>Company</label>
-                    <select name="company">
-                        <option value="">All Companies</option>
-
-                        {% for company in companies %}
-                            <option value="{{ company }}" {% if selected_company == company %}selected{% endif %}>
-                                {{ company }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                    <input type="text" name="company" required>
                 </div>
 
-                <div class="filter-group">
+                <div class="form-group">
+                    <label>Project / Supply</label>
+                    <input type="text" name="project_supply" required>
+                </div>
+
+                <div class="form-group">
                     <label>Client</label>
-                    <select name="client">
-                        <option value="">All Clients</option>
-
-                        {% for client in clients %}
-                            <option value="{{ client }}" {% if selected_client == client %}selected{% endif %}>
-                                {{ client }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                    <input type="text" name="client" required>
                 </div>
 
-                <div class="filter-group">
-                    <label>Status</label>
-                    <select name="status">
-                        <option value="">All Statuses</option>
-
-                        {% for value, label in statuses %}
-                            <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                <div class="form-group">
+                    <label>Submission Date</label>
+                    <input type="date" name="submission_date">
                 </div>
 
-                <div class="filter-group">
+                <div class="form-group">
+                    <label>Expected Award Date</label>
+                    <input type="date" name="expected_award_date">
+                </div>
+
+                <div class="form-group">
+                    <label>Expected Contract Value</label>
+                    <input type="number" step="0.01" name="contract_value">
+                </div>
+
+                <div class="form-group">
                     <label>Tax Type</label>
+
                     <select name="tax_type">
-                        <option value="">All Tax Types</option>
 
                         {% for value, label in tax_types %}
-                            <option value="{{ value }}" {% if selected_tax_type == value %}selected{% endif %}>
+                            <option value="{{ value }}">
                                 {{ label }}
                             </option>
                         {% endfor %}
+
                     </select>
                 </div>
 
-                <div class="filter-group">
-                    <label>Payment Status</label>
-                    <select name="payment_status">
-                        <option value="">All Payments</option>
-                        <option value="pending" {% if selected_payment_status == "pending" %}selected{% endif %}>Pending Payment</option>
-                        <option value="unpaid" {% if selected_payment_status == "unpaid" %}selected{% endif %}>Unpaid</option>
-                        <option value="partly_paid" {% if selected_payment_status == "partly_paid" %}selected{% endif %}>Partly Paid</option>
-                        <option value="fully_paid" {% if selected_payment_status == "fully_paid" %}selected{% endif %}>Fully Paid</option>
+                <div class="form-group">
+                    <label>Status</label>
+
+                    <select name="status">
+
+                        {% for value, label in pending_statuses %}
+                            <option value="{{ value }}">
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+
                     </select>
                 </div>
 
-                <div class="filter-group">
-                    <label>Start Date From</label>
-                    <input type="date" name="start_date" value="{{ selected_start_date }}">
-                </div>
-
-                <div class="filter-group">
-                    <label>Start Date To</label>
-                    <input type="date" name="end_date" value="{{ selected_end_date }}">
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea name="notes"></textarea>
                 </div>
 
             </div>
 
-            <div class="filter-actions">
+            <div class="form-actions">
+
                 <button type="submit" class="btn">
-                    Apply Filter
+                    Add Pending Project
                 </button>
 
-                <a href="{% url 'project_report' %}" class="btn clear-btn">
-                    Clear Filter
-                </a>
             </div>
 
         </form>
 
     </div>
+
+    <!-- MAIN PROJECTS TABLE -->
+
+    <h2 class="section-title">
+        Awarded Projects
+    </h2>
 
     <div class="table-container">
 
         <table>
 
             <thead>
+
                 <tr>
                     <th>Company</th>
                     <th>Project / Supply</th>
                     <th>Client</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Contract Value</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Contract</th>
                     <th>Tax Type</th>
-                    <th>Tax Amount</th>
-                    <th>Net Contract</th>
+                    <th>Tax</th>
+                    <th>Net</th>
                     <th>Expenses</th>
                     <th>Profit</th>
                     <th>Paid</th>
-                    <th>Pending Payment</th>
+                    <th>Pending</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
+
             </thead>
 
             <tbody>
@@ -588,10 +627,15 @@
                 {% for record in records %}
 
                 <tr>
+
                     <td>{{ record.company }}</td>
+
                     <td>{{ record.project_supply }}</td>
+
                     <td>{{ record.client }}</td>
+
                     <td>{{ record.start_date|default:"—" }}</td>
+
                     <td>{{ record.end_date|default:"—" }}</td>
 
                     <td class="money">
@@ -629,32 +673,148 @@
                     </td>
 
                     <td>
+
                         {% if record.status == "Done" %}
                             <span class="badge done">{{ record.status }}</span>
+
                         {% elif record.status == "Partial Done" %}
                             <span class="badge partial">{{ record.status }}</span>
+
                         {% elif record.status == "Started" %}
                             <span class="badge started">{{ record.status }}</span>
+
                         {% else %}
                             <span class="badge not-started">{{ record.status }}</span>
                         {% endif %}
+
                     </td>
 
                     <td>
+
                         <div class="action-buttons">
+
                             <a href="{% url 'project_expenses' record.id %}" class="btn expense-btn">
                                 Expenses
                             </a>
+
                         </div>
+
                     </td>
+
                 </tr>
 
                 {% empty %}
 
                 <tr>
+
                     <td colspan="15" class="empty">
-                        No project records available for the selected filters.
+                        No awarded projects available.
                     </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <!-- PENDING PROJECTS TABLE -->
+
+    <h2 class="section-title">
+        Pending / Not Yet Awarded Projects
+    </h2>
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Company</th>
+                    <th>Project / Supply</th>
+                    <th>Client</th>
+                    <th>Submission Date</th>
+                    <th>Expected Award</th>
+                    <th>Expected Contract</th>
+                    <th>Tax Type</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                    <th>Action</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for pending in pending_projects %}
+
+                <tr>
+
+                    <td>{{ pending.company }}</td>
+
+                    <td>{{ pending.project_supply }}</td>
+
+                    <td>{{ pending.client }}</td>
+
+                    <td>{{ pending.submission_date|default:"—" }}</td>
+
+                    <td>{{ pending.expected_award_date|default:"—" }}</td>
+
+                    <td class="money">
+                        ZMW {{ pending.contract_value|floatformat:2|intcomma }}
+                    </td>
+
+                    <td>
+                        {{ pending.get_tax_type_display }}
+                    </td>
+
+                    <td>
+
+                        {% if pending.status == "Submitted" %}
+                            <span class="badge submitted">
+                                {{ pending.status }}
+                            </span>
+
+                        {% elif pending.status == "Awaiting Award" %}
+                            <span class="badge awaiting">
+                                {{ pending.status }}
+                            </span>
+
+                        {% else %}
+                            <span class="badge not-awarded">
+                                {{ pending.status }}
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+                        {{ pending.notes|default:"—" }}
+                    </td>
+
+                    <td>
+
+                        <a href="{% url 'award_pending_project' pending.id %}" class="btn award-btn">
+                            Mark Awarded
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td colspan="10" class="empty">
+                        No pending projects available.
+                    </td>
+
                 </tr>
 
                 {% endfor %}
