@@ -23,6 +23,8 @@ def get_filtered_records(request):
     start_date = request.GET.get("start_date", "")
     end_date = request.GET.get("end_date", "")
 
+    selected_projects = request.GET.getlist("selected_projects")
+
     if company:
         records = records.filter(company=company)
 
@@ -64,6 +66,11 @@ def get_filtered_records(request):
     if end_date:
         records = records.filter(
             start_date__lte=end_date
+        )
+
+    if selected_projects:
+        records = records.filter(
+            id__in=selected_projects
         )
 
     return records.order_by(
@@ -137,6 +144,8 @@ def get_report_context(request):
         "selected_payment_status": request.GET.get("payment_status", ""),
         "selected_start_date": request.GET.get("start_date", ""),
         "selected_end_date": request.GET.get("end_date", ""),
+
+        "selected_projects": request.GET.getlist("selected_projects"),
 
         "total_contract": total_contract,
         "total_net_contract": total_net_contract,
