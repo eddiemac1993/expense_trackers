@@ -11,6 +11,7 @@ urlpatterns = [
     path('papers/', include('papers.urls')),
     path('documents/', include('documents.urls')),
     path("", include("reports.urls")),
+    path("cmm-expenses/", include("cmm_expenses.urls")),
 ]
 
 if settings.DEBUG:

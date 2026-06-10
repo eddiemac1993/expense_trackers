@@ -23,7 +23,17 @@ urlpatterns = [
         views.project_report,
         name="edit_project_report"
     ),
+    path(
+        "project-report/<int:project_id>/expenses/<int:expense_id>/edit/",
+        views.edit_expense,
+        name="edit_expense"
+    ),
 
+    path(
+        "project-report/<int:project_id>/expenses/<int:expense_id>/delete/",
+        views.delete_expense,
+        name="delete_expense"
+    ),
     path(
         "project/<int:project_id>/delete/",
         views.delete_project_report,

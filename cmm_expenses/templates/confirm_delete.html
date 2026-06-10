@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Delete — CMM Chronos{% endblock %}
+{% block page_title %}Confirm Delete{% endblock %}
+
+{% block topbar_actions %}
+  <a href="javascript:history.back()" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Go Back
+  </a>
+{% endblock %}
+
+{% block content %}
+
+<div class="confirm-card">
+  <div class="confirm-danger-bar"></div>
+  <div class="confirm-body">
+
+    <div class="confirm-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14H6L5 6"/>
+        <path d="M10 11v6M14 11v6"/>
+        <path d="M9 6V4h6v2"/>
+      </svg>
+    </div>
+
+    <div class="confirm-title">Delete this record?</div>
+    <div class="confirm-text">
+      You are about to delete <strong>{{ object }}</strong>. This action cannot be undone and all associated data will be permanently removed.
+    </div>
+
+    <form method="post" class="confirm-actions">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary" style="background:var(--red);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Yes, Delete
+      </button>
+      <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+    </form>
+
+  </div>
+</div>
+
+{% endblock %}

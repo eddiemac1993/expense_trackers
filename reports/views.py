@@ -392,3 +392,54 @@ def generate_project_report_pdf(request):
         )
 
     return response
+
+
+def edit_expense(request, project_id, expense_id):
+    project = get_object_or_404(ProjectRecord, id=project_id)
+
+    expense = get_object_or_404(
+        ProjectExpense,
+        id=expense_id,
+        project=project
+    )
+
+    if request.method == "POST":
+        expense.reason = request.POST.get("reason")
+        expense.amount = request.POST.get("amount") or 0
+        expense.notes = request.POST.get("notes", "")
+        expense.date = request.POST.get("date") or None
+
+        tag_name = request.POST.get("tag", "").strip()
+
+        if tag_name:
+            tag, created = ExpenseTag.objects.get_or_create(
+                name=tag_name
+            )
+            expense.tag = tag
+        else:
+            expense.tag = None
+
+        expense.save()
+
+    return redirect(
+        "project_expenses",
+        project_id=project.id
+    )
+
+
+def delete_expense(request, project_id, expense_id):
+    project = get_object_or_404(ProjectRecord, id=project_id)
+
+    expense = get_object_or_404(
+        ProjectExpense,
+        id=expense_id,
+        project=project
+    )
+
+    if request.method == "POST":
+        expense.delete()
+
+    return redirect(
+        "project_expenses",
+        project_id=project.id
+    )
