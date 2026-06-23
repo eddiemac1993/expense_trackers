@@ -176,11 +176,11 @@
                 </td>
                 <td>
                     <span class="meta-label">Date of Issue</span>
-                    <span class="meta-value">{{ entry.date|date:"d M Y" }}</span>
+                    <span class="meta-value"></span>
                 </td>
                 <td>
                     <span class="meta-label">Valid Until</span>
-                    <span class="meta-value">{{ entry.expiry_date|default:"30 Days from Issue" }}</span>
+                    <span class="meta-value"></span>
                 </td>
                 <td class="text-right">
                     <span class="meta-label">Total Amount (ZMW)</span>
@@ -265,7 +265,7 @@
                             <td class="text-right bold">{{ entry.subtotal|floatformat:2|intcomma }}</td>
                         </tr>
                         <tr>
-                            <td class="text-muted uppercase" style="font-size: 9px;">Tax ({{ entry.tax_percentage }}%)</td>
+                            <td class="text-muted uppercase" style="font-size: 9px;">Tax (INC)</td>
                             <td class="text-right bold">{{ entry.tax_amount|floatformat:2|intcomma }}</td>
                         </tr>
                         <tr class="total-row">
@@ -281,24 +281,14 @@
     </div>
 
     <!-- SIGNATURES -->
-    <div class="footer-details">
-        <table class="table-fixed">
-            <tr>
-                <td>
-                    <div class="signature-space">
-                        <span class="bold">{{ entry.prepared_by|default:entry.company.name }}</span><br>
-                        <span class="text-muted uppercase" style="font-size: 8px;">Authorized Signatory</span>
-                    </div>
-                </td>
-                <td>
-                    <div class="signature-space" style="margin-left: auto;">
-                        <br>
-                        <span class="text-muted uppercase" style="font-size: 8px;">Client Acceptance (Sign & Date)</span>
-                    </div>
-                </td>
-            </tr>
-        </table>
+<!-- SIGNATURE -->
+<div class="footer-details">
+    <div class="signature-space" style="width:250px;">
+        <span class="text-muted uppercase" style="font-size: 10px;">
+            Prepared By
+        </span>
     </div>
+</div>
 
 </div>
 

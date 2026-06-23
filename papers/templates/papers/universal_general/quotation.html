@@ -245,7 +245,7 @@
             <td class="label">Date:</td>
             <td></td>
             <td class="label">Valid Until:</td>
-            <td>{{ entry.valid_until|date:"d M Y"|default:"60 Days from issue" }}</td>
+            <td>{{ entry.valid_until|date:"d M Y"|default:" " }}</td>
         </tr>
         <tr>
             <td class="label">Client:</td>
@@ -301,25 +301,16 @@
     <!-- NOTES -->
     <div class="notes">
         <strong>Notes & Terms:</strong><br>
-        • Prices quoted are valid for {{ entry.validity_days|default:"60" }} days.<br>
+        • Prices quoted are valid for {{ entry.validity_days|default:" " }} days.<br>
         • Delivery/Completion: Subject to availability and confirmation.<br>
         • Please refer to the reference number above for all inquiries.
     </div>
 
     <!-- SIGNATURES -->
-    <table class="signatures">
-        <tr>
-            <td>
-                <div class="sig-line">Prepared By</div>
-            </td>
-            <td>
-                <div class="sig-line">Approved By</div>
-            </td>
-            <td>
-                <div class="sig-line">Client Acknowledgement</div>
-            </td>
-        </tr>
-    </table>
+<!-- SIGNATURE -->
+<div style="margin-top:25mm; width:80mm;">
+    <div class="sig-line">Prepared By</div>
+</div>
 
     <div style="margin-top: 15mm; text-align: center; font-size: 10px; color: #666;">
         Thank you for the opportunity to quote!
