@@ -12,7 +12,7 @@ from django.template.loader import render_to_string
 try:
     from weasyprint import HTML
     WEASYPRINT_AVAILABLE = True
-except ImportError:
+except Exception:
     WEASYPRINT_AVAILABLE = False
     HTML = None
 

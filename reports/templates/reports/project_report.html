@@ -315,6 +315,32 @@
             flex-wrap:wrap;
         }
 
+        .table-meta{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:10px;
+            flex-wrap:wrap;
+            margin-bottom:12px;
+            color:#6b7280;
+            font-size:13px;
+        }
+
+        .pagination{
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            gap:8px;
+            flex-wrap:wrap;
+            margin:18px 0 30px;
+        }
+
+        .pagination .current{
+            color:#374151;
+            font-weight:bold;
+            padding:8px 12px;
+        }
+
         @media(max-width:768px){
             body{
                 padding:10px;
@@ -438,7 +464,13 @@
 
                 <div class="form-group">
                     <label>Company</label>
-                    <input type="text" name="company" required value="{{ editing_project.company|default:'' }}">
+                    <input
+                        type="text"
+                        name="company"
+                        list="company-options"
+                        required
+                        value="{{ editing_project.company|default:'' }}"
+                    >
                 </div>
 
                 <div class="form-group">
@@ -536,7 +568,7 @@
 
                 <div class="form-group">
                     <label>Company</label>
-                    <input type="text" name="company" required>
+                    <input type="text" name="company" list="company-options" required>
                 </div>
 
                 <div class="form-group">
@@ -607,6 +639,12 @@
 
     {% endif %}
 
+    <datalist id="company-options">
+        {% for company in companies %}
+            <option value="{{ company }}"></option>
+        {% endfor %}
+    </datalist>
+
     <div class="filters">
 
         <h2 class="filters-title">Filter Projects</h2>
@@ -614,6 +652,16 @@
         <form method="get">
 
             <div class="filter-grid">
+
+                <div class="filter-group">
+                    <label>Search</label>
+                    <input
+                        type="search"
+                        name="q"
+                        value="{{ selected_search }}"
+                        placeholder="Company, client, or project"
+                    >
+                </div>
 
                 <div class="filter-group">
                     <label>Company</label>
@@ -684,6 +732,20 @@
                     <input type="date" name="end_date" value="{{ selected_end_date }}">
                 </div>
 
+                <div class="filter-group">
+                    <label>Sort By</label>
+                    <select name="sort">
+                        <option value="start_date" {% if selected_sort == "start_date" %}selected{% endif %}>Start date, oldest first</option>
+                        <option value="-start_date" {% if selected_sort == "-start_date" %}selected{% endif %}>Start date, newest first</option>
+                        <option value="-contract" {% if selected_sort == "-contract" %}selected{% endif %}>Contract value, highest first</option>
+                        <option value="contract" {% if selected_sort == "contract" %}selected{% endif %}>Contract value, lowest first</option>
+                        <option value="-paid" {% if selected_sort == "-paid" %}selected{% endif %}>Paid amount, highest first</option>
+                        <option value="company" {% if selected_sort == "company" %}selected{% endif %}>Company, A-Z</option>
+                        <option value="client" {% if selected_sort == "client" %}selected{% endif %}>Client, A-Z</option>
+                        <option value="status" {% if selected_sort == "status" %}selected{% endif %}>Status, A-Z</option>
+                    </select>
+                </div>
+
             </div>
 
             <div class="filter-actions">
@@ -698,6 +760,18 @@
     <h2 class="section-title">Awarded Projects</h2>
 
     <form method="get">
+
+        <div class="table-meta">
+            <div>
+                Showing {{ records|length }} of {{ result_count }} awarded project{{ result_count|pluralize }}
+            </div>
+
+            {% if page_obj and page_obj.paginator.num_pages > 1 %}
+                <div>
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </div>
+            {% endif %}
+        </div>
 
         <div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
             <button type="submit" class="btn">Filter Selected Projects</button>
@@ -832,6 +906,24 @@
 
     </form>
 
+    {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a class="btn clear-btn" href="?{{ filter_querystring }}&page=1">First</a>
+                <a class="btn clear-btn" href="?{{ filter_querystring }}&page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a class="btn clear-btn" href="?{{ filter_querystring }}&page={{ page_obj.next_page_number }}">Next</a>
+                <a class="btn clear-btn" href="?{{ filter_querystring }}&page={{ page_obj.paginator.num_pages }}">Last</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
     <h2 class="section-title">Pending / Not Yet Awarded Projects</h2>
 
     <div class="table-container">
@@ -885,9 +977,12 @@
 
                     <td>
                         {% if request.user.is_authenticated and request.user.is_staff %}
-                            <a href="{% url 'award_pending_project' pending.id %}" class="btn award-btn">
-                                Mark Awarded
-                            </a>
+                            <form method="post" action="{% url 'award_pending_project' pending.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn award-btn">
+                                    Mark Awarded
+                                </button>
+                            </form>
                         {% endif %}
                     </td>
 

@@ -1,7 +1,11 @@
-from django.db.models import F
+from django.contrib.admin.views.decorators import staff_member_required
+from django.conf import settings
+from django.core.paginator import Paginator
+from django.db.models import F, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import get_template
+from django.views.decorators.http import require_POST
 from xhtml2pdf import pisa
 
 from .models import (
@@ -12,9 +16,48 @@ from .models import (
 )
 
 
+COMPANY_ALIASES = {
+    "solid connection z limited": "Solid Connections Zambia Ltd",
+    "solid connections z limited": "Solid Connections Zambia Ltd",
+    "solid connections z ltd": "Solid Connections Zambia Ltd",
+    "solid connections zambia limited": "Solid Connections Zambia Ltd",
+    "solid connections zambia ltd": "Solid Connections Zambia Ltd",
+}
+
+
+def normalize_company_key(name):
+    cleaned = "".join(
+        char.lower() if char.isalnum() else " "
+        for char in (name or "")
+    )
+    return " ".join(cleaned.split())
+
+
+def clean_company_name(name):
+    name = (name or "").strip()
+    key = normalize_company_key(name)
+
+    if key in COMPANY_ALIASES:
+        return COMPANY_ALIASES[key]
+
+    existing_names = list(
+        ProjectRecord.objects.values_list("company", flat=True).distinct()
+    )
+    existing_names += list(
+        PendingProjectRecord.objects.values_list("company", flat=True).distinct()
+    )
+
+    for existing_name in existing_names:
+        if normalize_company_key(existing_name) == key:
+            return existing_name
+
+    return " ".join(name.split())
+
+
 def get_filtered_records(request):
     records = ProjectRecord.objects.prefetch_related("expenses").all()
 
+    search = request.GET.get("q", "").strip()
     company = request.GET.get("company", "")
     client = request.GET.get("client", "")
     status = request.GET.get("status", "")
@@ -24,6 +67,13 @@ def get_filtered_records(request):
     end_date = request.GET.get("end_date", "")
 
     selected_projects = request.GET.getlist("selected_projects")
+
+    if search:
+        records = records.filter(
+            Q(company__icontains=search)
+            | Q(project_supply__icontains=search)
+            | Q(client__icontains=search)
+        )
 
     if company:
         records = records.filter(company=company)
@@ -73,14 +123,36 @@ def get_filtered_records(request):
             id__in=selected_projects
         )
 
-    return records.order_by(
-        F("start_date").asc(nulls_last=True),
-        "created_at"
-    )
+    sort = request.GET.get("sort", "start_date")
+    sort_options = {
+        "company": "company",
+        "-company": "-company",
+        "client": "client",
+        "-client": "-client",
+        "start_date": F("start_date").asc(nulls_last=True),
+        "-start_date": F("start_date").desc(nulls_last=True),
+        "end_date": F("end_date").asc(nulls_last=True),
+        "-end_date": F("end_date").desc(nulls_last=True),
+        "contract": "contract_value",
+        "-contract": "-contract_value",
+        "paid": "paid_value",
+        "-paid": "-paid_value",
+        "status": "status",
+        "-status": "-status",
+        "created": "created_at",
+        "-created": "-created_at",
+    }
+
+    ordering = sort_options.get(sort, sort_options["start_date"])
+    if isinstance(ordering, str):
+        return records.order_by(ordering, "created_at")
+
+    return records.order_by(ordering, "created_at")
 
 
-def get_report_context(request):
+def get_report_context(request, paginate=True):
     records = get_filtered_records(request)
+    all_records = records
 
     pending_projects = (
         PendingProjectRecord.objects
@@ -89,35 +161,34 @@ def get_report_context(request):
     )
 
     total_contract = sum(
-        record.contract_value for record in records
+        record.contract_value for record in all_records
     )
 
     total_expense = sum(
-        record.expense_value for record in records
+        record.expense_value for record in all_records
     )
 
     total_tax = sum(
-        record.tax_amount for record in records
+        record.tax_amount for record in all_records
     )
 
     total_net_contract = sum(
-        record.contract_excluding_tax for record in records
+        record.contract_excluding_tax for record in all_records
     )
 
     total_profit = total_net_contract - total_expense
 
     total_paid = sum(
-        record.paid_value for record in records
+        record.paid_value for record in all_records
     )
 
     total_pending = total_contract - total_paid
 
-    companies = (
-        ProjectRecord.objects
-        .values_list("company", flat=True)
-        .distinct()
-        .order_by("company")
-    )
+    companies = sorted(set(
+        ProjectRecord.objects.values_list("company", flat=True)
+    ) | set(
+        PendingProjectRecord.objects.values_list("company", flat=True)
+    ))
 
     clients = (
         ProjectRecord.objects
@@ -126,8 +197,20 @@ def get_report_context(request):
         .order_by("client")
     )
 
+    page_obj = None
+    if paginate:
+        paginator = Paginator(records, 25)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        records = page_obj.object_list
+
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+
     return {
         "records": records,
+        "page_obj": page_obj,
+        "result_count": all_records.count(),
+        "filter_querystring": query_params.urlencode(),
         "pending_projects": pending_projects,
 
         "companies": companies,
@@ -137,6 +220,7 @@ def get_report_context(request):
         "tax_types": ProjectRecord.TAX_CHOICES,
         "pending_statuses": PendingProjectRecord.STATUS_CHOICES,
 
+        "selected_search": request.GET.get("q", "").strip(),
         "selected_company": request.GET.get("company", ""),
         "selected_client": request.GET.get("client", ""),
         "selected_status": request.GET.get("status", ""),
@@ -144,6 +228,7 @@ def get_report_context(request):
         "selected_payment_status": request.GET.get("payment_status", ""),
         "selected_start_date": request.GET.get("start_date", ""),
         "selected_end_date": request.GET.get("end_date", ""),
+        "selected_sort": request.GET.get("sort", "start_date"),
 
         "selected_projects": request.GET.getlist("selected_projects"),
 
@@ -160,6 +245,9 @@ def get_report_context(request):
 def project_report(request, project_id=None):
     editing_project = None
 
+    if request.method == "POST" and not request.user.is_staff:
+        return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+
     if project_id:
         editing_project = get_object_or_404(
             ProjectRecord,
@@ -167,7 +255,7 @@ def project_report(request, project_id=None):
         )
 
     if request.method == "POST":
-        company = request.POST.get("company")
+        company = clean_company_name(request.POST.get("company"))
         project_supply = request.POST.get("project_supply")
         client = request.POST.get("client")
 
@@ -228,10 +316,12 @@ def project_report(request, project_id=None):
     )
 
 
+@staff_member_required
+@require_POST
 def add_pending_project(request):
     if request.method == "POST":
 
-        company = request.POST.get("company")
+        company = clean_company_name(request.POST.get("company"))
         project_supply = request.POST.get("project_supply")
         client = request.POST.get("client")
 
@@ -269,6 +359,8 @@ def add_pending_project(request):
     return redirect("project_report")
 
 
+@staff_member_required
+@require_POST
 def award_pending_project(request, pending_id):
     pending_project = get_object_or_404(
         PendingProjectRecord,
@@ -296,6 +388,8 @@ def award_pending_project(request, pending_id):
     return redirect("project_report")
 
 
+@staff_member_required
+@require_POST
 def delete_project_report(request, project_id):
     project = get_object_or_404(
         ProjectRecord,
@@ -314,6 +408,8 @@ def project_expenses(request, project_id):
     )
 
     if request.method == "POST":
+        if not request.user.is_staff:
+            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
 
         reason = request.POST.get("reason")
 
@@ -361,7 +457,7 @@ def project_expenses(request, project_id):
 
 
 def generate_project_report_pdf(request):
-    context = get_report_context(request)
+    context = get_report_context(request, paginate=False)
 
     template = get_template(
         "reports/project_report_pdf.html"
@@ -394,6 +490,7 @@ def generate_project_report_pdf(request):
     return response
 
 
+@staff_member_required
 def edit_expense(request, project_id, expense_id):
     project = get_object_or_404(ProjectRecord, id=project_id)
 
@@ -427,6 +524,8 @@ def edit_expense(request, project_id, expense_id):
     )
 
 
+@staff_member_required
+@require_POST
 def delete_expense(request, project_id, expense_id):
     project = get_object_or_404(ProjectRecord, id=project_id)
 

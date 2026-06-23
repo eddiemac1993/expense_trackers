@@ -2,3 +2,5 @@ asgiref==3.10.0
 Django==5.2.7
 sqlparse==0.5.3
 tzdata==2025.2
+weasyprint==69.0
+xhtml2pdf==0.2.17

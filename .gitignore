@@ -1,7 +1,11 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 *.db
+db.sqlite3
+media/
+server-*.log
 .env

@@ -3,9 +3,6 @@ from django.http import HttpResponse
 from django.template.loader import get_template
 from django.conf import settings
 
-from weasyprint import HTML
-from weasyprint.text.fonts import FontConfiguration
-
 from .models import PaperEntry
 from .forms import PaperEntryForm, PaperItemFormSet, ClientForm
 
@@ -163,6 +160,9 @@ def paper_preview(request, entry_id, paper_type):
 
 
 def paper_pdf(request, entry_id, paper_type):
+    from weasyprint import HTML
+    from weasyprint.text.fonts import FontConfiguration
+
     entry = get_object_or_404(PaperEntry, id=entry_id)
 
     # 1. Extract internal sequence (0003)
