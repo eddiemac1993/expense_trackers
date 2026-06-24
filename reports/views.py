@@ -24,6 +24,14 @@ COMPANY_ALIASES = {
     "solid connections zambia ltd": "Solid Connections Zambia Ltd",
 }
 
+COMPANY_GROUPS = {
+    "Solid Connections Zambia Ltd": [
+        "Solid Connection (Z) Limited",
+        "Solid Connections (Z) Limited",
+        "Solid Connections Zambia Ltd",
+    ],
+}
+
 
 def normalize_company_key(name):
     cleaned = "".join(
@@ -54,6 +62,15 @@ def clean_company_name(name):
     return " ".join(name.split())
 
 
+def company_filter_values(name):
+    clean_name = clean_company_name(name)
+    return COMPANY_GROUPS.get(clean_name, [clean_name])
+
+
+def company_display_name(name):
+    return clean_company_name(name)
+
+
 def money_for_chart(value):
     return float(value or 0)
 
@@ -80,7 +97,7 @@ def get_filtered_records(request):
         )
 
     if company:
-        records = records.filter(company=company)
+        records = records.filter(company__in=company_filter_values(company))
 
     if client:
         records = records.filter(client=client)
@@ -191,7 +208,8 @@ def get_report_context(request, paginate=True):
 
     company_chart = {}
     for record in all_record_list:
-        company_data = company_chart.setdefault(record.company, {
+        company_name = company_display_name(record.company)
+        company_data = company_chart.setdefault(company_name, {
             "contract": 0,
             "paid": 0,
             "balance": 0,
@@ -218,11 +236,11 @@ def get_report_context(request, paginate=True):
         "profits": [data["profit"] for company, data in chart_items],
     }
 
-    companies = sorted(set(
-        ProjectRecord.objects.values_list("company", flat=True)
-    ) | set(
-        PendingProjectRecord.objects.values_list("company", flat=True)
-    ))
+    companies = sorted({
+        company_display_name(company)
+        for company in list(ProjectRecord.objects.values_list("company", flat=True))
+        + list(PendingProjectRecord.objects.values_list("company", flat=True))
+    })
 
     clients = (
         ProjectRecord.objects
@@ -256,7 +274,7 @@ def get_report_context(request, paginate=True):
         "pending_statuses": PendingProjectRecord.STATUS_CHOICES,
 
         "selected_search": request.GET.get("q", "").strip(),
-        "selected_company": request.GET.get("company", ""),
+        "selected_company": company_display_name(request.GET.get("company", "")),
         "selected_client": request.GET.get("client", ""),
         "selected_status": request.GET.get("status", ""),
         "selected_tax_type": request.GET.get("tax_type", ""),
