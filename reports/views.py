@@ -54,6 +54,10 @@ def clean_company_name(name):
     return " ".join(name.split())
 
 
+def money_for_chart(value):
+    return float(value or 0)
+
+
 def get_filtered_records(request):
     records = ProjectRecord.objects.prefetch_related("expenses").all()
 
@@ -153,6 +157,7 @@ def get_filtered_records(request):
 def get_report_context(request, paginate=True):
     records = get_filtered_records(request)
     all_records = records
+    all_record_list = list(all_records)
 
     pending_projects = (
         PendingProjectRecord.objects
@@ -161,28 +166,57 @@ def get_report_context(request, paginate=True):
     )
 
     total_contract = sum(
-        record.contract_value for record in all_records
+        record.contract_value for record in all_record_list
     )
 
     total_expense = sum(
-        record.expense_value for record in all_records
+        record.expense_value for record in all_record_list
     )
 
     total_tax = sum(
-        record.tax_amount for record in all_records
+        record.tax_amount for record in all_record_list
     )
 
     total_net_contract = sum(
-        record.contract_excluding_tax for record in all_records
+        record.contract_excluding_tax for record in all_record_list
     )
 
     total_profit = total_net_contract - total_expense
 
     total_paid = sum(
-        record.paid_value for record in all_records
+        record.paid_value for record in all_record_list
     )
 
     total_pending = total_contract - total_paid
+
+    company_chart = {}
+    for record in all_record_list:
+        company_data = company_chart.setdefault(record.company, {
+            "contract": 0,
+            "paid": 0,
+            "balance": 0,
+            "expenses": 0,
+            "profit": 0,
+        })
+        company_data["contract"] += money_for_chart(record.contract_value)
+        company_data["paid"] += money_for_chart(record.paid_value)
+        company_data["balance"] += money_for_chart(record.pending_payment_value)
+        company_data["expenses"] += money_for_chart(record.expense_value)
+        company_data["profit"] += money_for_chart(record.profit_value)
+
+    chart_items = sorted(
+        company_chart.items(),
+        key=lambda item: item[1]["contract"],
+        reverse=True
+    )
+    report_chart_data = {
+        "labels": [company for company, data in chart_items],
+        "contracts": [data["contract"] for company, data in chart_items],
+        "paids": [data["paid"] for company, data in chart_items],
+        "balances": [data["balance"] for company, data in chart_items],
+        "expenses": [data["expenses"] for company, data in chart_items],
+        "profits": [data["profit"] for company, data in chart_items],
+    }
 
     companies = sorted(set(
         ProjectRecord.objects.values_list("company", flat=True)
@@ -209,8 +243,9 @@ def get_report_context(request, paginate=True):
     return {
         "records": records,
         "page_obj": page_obj,
-        "result_count": all_records.count(),
+        "result_count": len(all_record_list),
         "filter_querystring": query_params.urlencode(),
+        "report_chart_data": report_chart_data,
         "pending_projects": pending_projects,
 
         "companies": companies,
