@@ -14,6 +14,17 @@ from .models import PaperEntry, get_default_client
 from .forms import PaperEntryForm, ClientForm, PaperItemFormSet
 
 
+def make_paper_number(kind):
+    prefix = "SUP" if kind == PaperEntry.Kind.SUPPORTING else "PAP"
+    next_sequence = (PaperEntry.objects.aggregate(m=Max("id"))["m"] or 0) + 100
+
+    while True:
+        paper_number = f"{prefix}-{next_sequence:04d}"
+        if not PaperEntry.objects.filter(paper_number=paper_number).exists():
+            return paper_number
+        next_sequence += 1
+
+
 @transaction.atomic
 def create_paper_entry(request):
     if request.method == 'POST':
@@ -46,13 +57,10 @@ def create_paper_entry(request):
             entry = entry_form.save(commit=False)
             entry.client = client
 
-            # If paper_number is empty OR duplicates, generate next numeric number safely
-            # (works even if you already have old values like 1,2,3,27)
+            # If paper_number is empty OR duplicates, generate a readable reference.
             pn = (entry.paper_number or '').strip()
             if not pn or PaperEntry.objects.filter(paper_number=pn).exists():
-                max_id = PaperEntry.objects.aggregate(m=Max('id'))['m'] or 0
-                # This uses next id estimate; safe enough for sqlite single-writer.
-                entry.paper_number = str(max_id + 1)
+                entry.paper_number = make_paper_number(entry.kind)
 
             entry.save()
 
@@ -131,28 +139,30 @@ def edit_paper_entry(request, entry_id):
 
 # views.py
 def paper_list(request):
-    kind = request.GET.get("kind", "").strip()  # REAL / SUPPORT
+    kind = request.GET.get("kind", PaperEntry.Kind.REAL).strip()  # REAL / SUPPORT
     qs = PaperEntry.objects.all().order_by("-created_at")
 
-    if kind in ("REAL", "SUPPORT"):
+    if kind in (PaperEntry.Kind.REAL, PaperEntry.Kind.SUPPORTING):
         qs = qs.filter(kind=kind)
+    else:
+        kind = ""
 
     return render(request, "papers/paper_list.html", {
         "entries": qs,
         "kind": kind,
+        "real_count": PaperEntry.objects.filter(kind=PaperEntry.Kind.REAL).count(),
+        "support_count": PaperEntry.objects.filter(kind=PaperEntry.Kind.SUPPORTING).count(),
     })
+
+
+def paper_display_number(entry):
+    return entry.display_paper_number
 
 def paper_preview(request, entry_id, paper_type):
     entry = get_object_or_404(PaperEntry, id=entry_id)
 
-    # Extract numeric sequence
-    raw_sequence = entry.paper_number.split("/")[-1]
-
-    # Convert and apply offset
-    display_sequence = int(raw_sequence) + 99
-
-    # Override for display only
-    entry.paper_number = f"{display_sequence:04d}"
+    # Override for display only.
+    entry.paper_number = paper_display_number(entry)
 
     template = f"papers/{entry.company.slug}/{paper_type}.html"
     return render(request, template, {"entry": entry})
@@ -165,14 +175,9 @@ def paper_pdf(request, entry_id, paper_type):
 
     entry = get_object_or_404(PaperEntry, id=entry_id)
 
-    # 1. Extract internal sequence (0003)
-    raw_sequence = entry.paper_number.split("/")[-1]
-
-    # 2. Apply offset so display starts at 100
-    display_sequence = int(raw_sequence) + 99
-
-    # 3. Override ONLY for display inside PDF
-    entry.paper_number = f"{display_sequence:04d}"
+    # Override ONLY for display inside PDF.
+    display_number = paper_display_number(entry)
+    entry.paper_number = display_number
 
     template_path = f"papers/{entry.company.slug}/{paper_type}.html"
     template = get_template(template_path)
@@ -195,8 +200,7 @@ def paper_pdf(request, entry_id, paper_type):
         presentational_hints=True
     )
 
-    # 4. CLEAN DOWNLOAD NAME (this is the key)
-    filename = f"{paper_type}_{entry.company.slug.upper()}_{display_sequence:04d}.pdf"
+    filename = f"{paper_type}_{entry.company.slug.upper()}_{display_number}.pdf"
 
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'

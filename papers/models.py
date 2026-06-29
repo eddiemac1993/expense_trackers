@@ -71,7 +71,19 @@ class PaperEntry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.paper_number or f"Entry {self.id}"
+        return self.display_paper_number
+
+    @property
+    def display_paper_number(self):
+        raw_number = (self.paper_number or "").strip()
+        if not raw_number:
+            return f"Entry {self.id or ''}".strip()
+
+        if raw_number.isdigit():
+            prefix = "SUP" if self.kind == self.Kind.SUPPORTING else "PAP"
+            return f"{prefix}-{int(raw_number) + 99:04d}"
+
+        return raw_number
 
     def calculate_totals(self):
         self.subtotal = sum(item.amount for item in self.items.all())
