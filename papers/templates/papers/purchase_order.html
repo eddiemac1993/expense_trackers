@@ -214,7 +214,11 @@
     <div class="header">
         <div class="company">
             {% if entry.company.logo %}
-                <img src="{{ entry.company.logo.url }}" alt="{{ entry.company.name }} logo">
+                {% if is_pdf %}
+                    <img src="file://{{ entry.company.logo.path }}">
+                {% else %}
+                    <img src="{{ entry.company.logo.url }}">
+                {% endif %}
             {% endif %}
             <h1>{{ entry.company.name }}</h1>
             {% if entry.company.address %}<p>{{ entry.company.address|linebreaksbr }}</p>{% endif %}
