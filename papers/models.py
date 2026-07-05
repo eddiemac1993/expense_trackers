@@ -42,6 +42,7 @@ class PaperEntry(models.Model):
     class Kind(models.TextChoices):
         REAL = "REAL", "Real"
         SUPPORTING = "SUPPORT", "Supporting"
+        PURCHASE_ORDER = "PO", "Purchase Order"
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
     # allow empty client on the form; database will still have one after save()
@@ -80,7 +81,12 @@ class PaperEntry(models.Model):
             return f"Entry {self.id or ''}".strip()
 
         if raw_number.isdigit():
-            prefix = "SUP" if self.kind == self.Kind.SUPPORTING else "PAP"
+            if self.kind == self.Kind.PURCHASE_ORDER:
+                prefix = "PO"
+            elif self.kind == self.Kind.SUPPORTING:
+                prefix = "SUP"
+            else:
+                prefix = "PAP"
             return f"{prefix}-{int(raw_number) + 99:04d}"
 
         return raw_number

@@ -84,17 +84,17 @@
             </div>
         </div>
 
-        <!-- ================= CLIENT ================= -->
+        <!-- ================= CLIENT / SUPPLIER ================= -->
         <hr>
-        <h5>Client</h5>
+        <h5 id="party-heading">Client</h5>
 
         <details class="mb-3">
-            <summary class="text-muted" style="cursor:pointer;">
+            <summary class="text-muted" style="cursor:pointer;" id="party-summary">
                 Add New Client (Optional) — leave blank to use <strong>Walk-In Client</strong>
             </summary>
 
             <div class="mt-3">
-                <p class="text-muted mb-2">Only fill <strong>Name</strong> if you want to create a new client. The rest is optional.</p>
+                <p class="text-muted mb-2" id="party-help">Only fill <strong>Name</strong> if you want to create a new client. The rest is optional.</p>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
@@ -209,9 +209,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const kindSelect = document.getElementById('id_kind');
     const parentWrapper = document.getElementById('parent-wrapper');
     const parentSelect = document.getElementById('id_parent');
+    const partyHeading = document.getElementById('party-heading');
+    const partySummary = document.getElementById('party-summary');
+    const partyHelp = document.getElementById('party-help');
 
     function toggleParent() {
         const isSupporting = kindSelect && kindSelect.value === "SUPPORT";
+        const isPurchaseOrder = kindSelect && kindSelect.value === "PO";
         if (!parentWrapper) return;
 
         if (isSupporting) {
@@ -219,6 +223,22 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             parentWrapper.style.display = 'none';
             if (parentSelect) parentSelect.value = '';
+        }
+
+        if (partyHeading) {
+            partyHeading.textContent = isPurchaseOrder ? 'Supplier / Vendor' : 'Client';
+        }
+
+        if (partySummary) {
+            partySummary.innerHTML = isPurchaseOrder
+                ? 'Add New Supplier (Optional) — leave blank if supplier details are not required'
+                : 'Add New Client (Optional) — leave blank to use <strong>Walk-In Client</strong>';
+        }
+
+        if (partyHelp) {
+            partyHelp.innerHTML = isPurchaseOrder
+                ? 'Only fill <strong>Name</strong> if you want to create a supplier/vendor record for this purchase order.'
+                : 'Only fill <strong>Name</strong> if you want to create a new client. The rest is optional.';
         }
     }
 

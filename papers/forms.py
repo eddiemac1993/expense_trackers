@@ -40,7 +40,7 @@ class PaperEntryForm(forms.ModelForm):
 
         if kind == PaperEntry.Kind.SUPPORTING and not parent:
             raise forms.ValidationError("Supporting paper must be linked to a Real paper.")
-        if kind == PaperEntry.Kind.REAL:
+        if kind != PaperEntry.Kind.SUPPORTING:
             cleaned["parent"] = None
         return cleaned
 

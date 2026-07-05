@@ -161,6 +161,11 @@
             color: #92400e;
         }
 
+        .kind-po {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
         .dropdown-menu {
             border-radius: 2px;
         }
@@ -200,12 +205,13 @@
                     <div class="eyebrow">Document Register</div>
                     <h1>Paper Entries</h1>
                     <p class="summary-note mb-0">
-                        Real commercial papers are shown first. Supporting papers remain one click away.
+                        Real commercial papers are shown first. Purchase orders are managed separately as buying documents.
                     </p>
                 </div>
                 <div class="header-actions align-items-start">
                     <a href="{% url 'project_report' %}" class="classic-btn light">Home</a>
                     <a href="{% url 'paper_create' %}" class="classic-btn">Create New Paper</a>
+                    <a href="{% url 'paper_create' %}?kind=PO" class="classic-btn light">Create Purchase Order</a>
                 </div>
             </div>
         </header>
@@ -217,6 +223,9 @@
                 </a>
                 <a class="classic-btn {% if kind == 'SUPPORT' %}active{% else %}light{% endif %}" href="{% url 'paper_list' %}?kind=SUPPORT">
                     Supporting Documents ({{ support_count }})
+                </a>
+                <a class="classic-btn {% if kind == 'PO' %}active{% else %}light{% endif %}" href="{% url 'paper_list' %}?kind=PO">
+                    Purchase Orders ({{ purchase_order_count }})
                 </a>
                 <a class="classic-btn {% if not kind %}active{% else %}light{% endif %}" href="{% url 'paper_list' %}?kind=ALL">
                     All Papers
@@ -243,7 +252,9 @@
                                     <span class="paper-no">{{ entry.display_paper_number }}</span>
                                 </td>
                                 <td>
-                                    {% if entry.kind == "SUPPORT" %}
+                                    {% if entry.kind == "PO" %}
+                                        <span class="kind-badge kind-po">Purchase Order</span>
+                                    {% elif entry.kind == "SUPPORT" %}
                                         <span class="kind-badge kind-support">Supporting</span>
                                     {% else %}
                                         <span class="kind-badge kind-real">Real</span>
@@ -266,10 +277,14 @@
                                                 PDF
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end">
-                                                <li><a class="dropdown-item" href="{% url 'paper_pdf' entry.id 'quotation' %}">Quotation PDF</a></li>
-                                                <li><a class="dropdown-item" href="{% url 'paper_pdf' entry.id 'invoice' %}">Invoice PDF</a></li>
-                                                <li><a class="dropdown-item" href="{% url 'paper_pdf' entry.id 'delivery' %}">Delivery Note PDF</a></li>
-                                                <li><a class="dropdown-item" href="{% url 'paper_pdf' entry.id 'receipt' %}">Receipt PDF</a></li>
+                                                {% if entry.kind == "PO" %}
+                                                    <li><a class="dropdown-item" href="{% url 'paper_pdf' entry.id 'purchase_order' %}">Purchase Order PDF</a></li>
+                                                {% else %}
+                                                    <li><a class="dropdown-item" href="{% url 'paper_pdf' entry.id 'quotation' %}">Quotation PDF</a></li>
+                                                    <li><a class="dropdown-item" href="{% url 'paper_pdf' entry.id 'invoice' %}">Invoice PDF</a></li>
+                                                    <li><a class="dropdown-item" href="{% url 'paper_pdf' entry.id 'delivery' %}">Delivery Note PDF</a></li>
+                                                    <li><a class="dropdown-item" href="{% url 'paper_pdf' entry.id 'receipt' %}">Receipt PDF</a></li>
+                                                {% endif %}
                                             </ul>
                                         </div>
                                     </div>

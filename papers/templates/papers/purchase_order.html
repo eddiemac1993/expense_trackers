@@ -1,0 +1,320 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Purchase Order | {{ entry.company.name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 18mm;
+        }
+
+        body {
+            margin: 0;
+            color: #111827;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+        }
+
+        .sheet {
+            width: 170mm;
+            margin: 0 auto;
+        }
+
+        .top-line {
+            border-top: 5px solid #111827;
+            margin-bottom: 12px;
+        }
+
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 2px solid #111827;
+            padding-bottom: 12px;
+        }
+
+        .company,
+        .po-box {
+            display: table-cell;
+            vertical-align: top;
+        }
+
+        .company {
+            width: 62%;
+        }
+
+        .company img {
+            max-height: 22mm;
+            max-width: 60mm;
+            margin-bottom: 6px;
+        }
+
+        .company h1 {
+            margin: 0 0 4px;
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+
+        .company p {
+            margin: 2px 0;
+            font-size: 11px;
+        }
+
+        .po-box {
+            width: 38%;
+            text-align: right;
+        }
+
+        .po-title {
+            border: 2px solid #111827;
+            display: inline-block;
+            padding: 8px 12px;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .po-meta {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .section-grid {
+            display: table;
+            width: 100%;
+            margin: 18px 0;
+            border-collapse: collapse;
+        }
+
+        .box {
+            display: table-cell;
+            width: 50%;
+            border: 1px solid #111827;
+            padding: 10px;
+            vertical-align: top;
+        }
+
+        .box + .box {
+            border-left: 0;
+        }
+
+        .box-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        .items {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+        }
+
+        .items th,
+        .items td {
+            border: 1px solid #111827;
+            padding: 8px;
+        }
+
+        .items th {
+            background: #f3f4f6;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .totals-wrap {
+            width: 100%;
+            margin-top: 12px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .totals {
+            width: 72mm;
+            border-collapse: collapse;
+        }
+
+        .totals td {
+            border: 1px solid #111827;
+            padding: 8px;
+        }
+
+        .totals .grand {
+            background: #f3f4f6;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .terms {
+            margin-top: 18px;
+            border: 1px solid #111827;
+            padding: 10px;
+            line-height: 1.55;
+        }
+
+        .signatures {
+            width: 100%;
+            margin-top: 22mm;
+            border-collapse: collapse;
+        }
+
+        .signatures td {
+            width: 33.33%;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .sig-line {
+            border-top: 1px solid #111827;
+            padding-top: 5px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .no-print {
+            text-align: right;
+            margin-bottom: 8px;
+        }
+
+        .no-print a {
+            background: #111827;
+            color: #fff;
+            padding: 7px 12px;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="sheet">
+    <div class="no-print">
+        <a href="{% url 'paper_pdf' entry.id 'purchase_order' %}" target="_blank">Download PDF</a>
+    </div>
+
+    <div class="top-line"></div>
+
+    <div class="header">
+        <div class="company">
+            {% if entry.company.logo %}
+                <img src="{{ entry.company.logo.url }}" alt="{{ entry.company.name }} logo">
+            {% endif %}
+            <h1>{{ entry.company.name }}</h1>
+            {% if entry.company.address %}<p>{{ entry.company.address|linebreaksbr }}</p>{% endif %}
+            {% if entry.company.phone %}<p>Tel: {{ entry.company.phone }}</p>{% endif %}
+            {% if entry.company.email %}<p>Email: {{ entry.company.email }}</p>{% endif %}
+        </div>
+
+        <div class="po-box">
+            <div class="po-title">Purchase Order</div>
+            <div class="po-meta">
+                <strong>PO No:</strong> {{ entry.paper_number }}<br>
+                <strong>Date:</strong> {{ entry.date|date:"d M, Y" }}
+            </div>
+        </div>
+    </div>
+
+    <div class="section-grid">
+        <div class="box">
+            <div class="box-title">Buyer</div>
+            <strong>{{ entry.company.name }}</strong><br>
+            {% if entry.company.address %}{{ entry.company.address|linebreaksbr }}<br>{% endif %}
+            {% if entry.company.phone %}{{ entry.company.phone }}<br>{% endif %}
+            {% if entry.company.email %}{{ entry.company.email }}{% endif %}
+        </div>
+        <div class="box">
+            <div class="box-title">Supplier / Vendor</div>
+            <strong>{{ entry.client.name }}</strong><br>
+            {% if entry.client.contact_person %}Attn: {{ entry.client.contact_person }}<br>{% endif %}
+            {% if entry.client.address %}{{ entry.client.address|linebreaksbr }}<br>{% endif %}
+            {% if entry.client.phone %}{{ entry.client.phone }}<br>{% endif %}
+            {% if entry.client.email %}{{ entry.client.email }}{% endif %}
+        </div>
+    </div>
+
+    <table class="items">
+        <thead>
+            <tr>
+                <th class="text-center" style="width: 10mm;">#</th>
+                <th>Description</th>
+                <th class="text-right" style="width: 22mm;">Qty</th>
+                <th class="text-right" style="width: 32mm;">Unit Price</th>
+                <th class="text-right" style="width: 34mm;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in entry.items.all %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td>{{ item.description }}</td>
+                    <td class="text-right">{{ item.quantity|floatformat:2 }}</td>
+                    <td class="text-right">ZMW {{ item.unit_price|floatformat:2|intcomma }}</td>
+                    <td class="text-right">ZMW {{ item.amount|floatformat:2|intcomma }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals-wrap">
+        <table class="totals">
+            <tr>
+                <td>Subtotal</td>
+                <td class="text-right">ZMW {{ entry.subtotal|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr>
+                <td>Tax ({{ entry.tax_percentage|floatformat:2 }}%)</td>
+                <td class="text-right">ZMW {{ entry.tax_amount|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr class="grand">
+                <td>Total Order Value</td>
+                <td class="text-right">ZMW {{ entry.total|floatformat:2|intcomma }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="terms">
+        <strong>Purchase Order Notes</strong><br>
+        Please supply the goods/services listed above according to the agreed price, specifications, and delivery terms.
+        Quote this purchase order number on all invoices, delivery notes, and correspondence.
+    </div>
+
+    <table class="signatures">
+        <tr>
+            <td>
+                <div class="sig-line">
+                    Prepared By<br>
+                    {{ entry.prepared_by|default:"" }}
+                </div>
+            </td>
+            <td>
+                <div class="sig-line">
+                    Approved By
+                </div>
+            </td>
+            <td>
+                <div class="sig-line">
+                    Supplier Acceptance
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>
