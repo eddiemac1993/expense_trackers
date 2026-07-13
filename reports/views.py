@@ -16,6 +16,9 @@ from .models import (
 )
 
 
+INTERNAL_PROJECT_CODE = "solid2026"
+
+
 COMPANY_ALIASES = {
     "solid connection z limited": "Solid Connections Zambia Ltd",
     "solid connections z limited": "Solid Connections Zambia Ltd",
@@ -75,8 +78,15 @@ def money_for_chart(value):
     return float(value or 0)
 
 
-def get_filtered_records(request):
-    records = ProjectRecord.objects.prefetch_related("expenses").all()
+def password_is_valid(request):
+    password = request.POST.get("password", "").strip()
+    return password == INTERNAL_PROJECT_CODE
+
+
+def get_filtered_records(request, internal=False):
+    records = ProjectRecord.objects.prefetch_related("expenses").filter(
+        is_internal=internal
+    )
 
     search = request.GET.get("q", "").strip()
     company = request.GET.get("company", "")
@@ -109,14 +119,10 @@ def get_filtered_records(request):
         records = records.filter(tax_type=tax_type)
 
     if payment_status == "pending":
-        records = records.filter(
-            paid_value__lt=F("contract_value")
-        )
+        records = records.filter(paid_value__lt=F("contract_value"))
 
     elif payment_status == "unpaid":
-        records = records.filter(
-            paid_value=0
-        )
+        records = records.filter(paid_value=0)
 
     elif payment_status == "partly_paid":
         records = records.filter(
@@ -125,24 +131,16 @@ def get_filtered_records(request):
         )
 
     elif payment_status == "fully_paid":
-        records = records.filter(
-            paid_value__gte=F("contract_value")
-        )
+        records = records.filter(paid_value__gte=F("contract_value"))
 
     if start_date:
-        records = records.filter(
-            start_date__gte=start_date
-        )
+        records = records.filter(start_date__gte=start_date)
 
     if end_date:
-        records = records.filter(
-            start_date__lte=end_date
-        )
+        records = records.filter(start_date__lte=end_date)
 
     if selected_projects:
-        records = records.filter(
-            id__in=selected_projects
-        )
+        records = records.filter(id__in=selected_projects)
 
     sort = request.GET.get("sort", "start_date")
     sort_options = {
@@ -165,50 +163,39 @@ def get_filtered_records(request):
     }
 
     ordering = sort_options.get(sort, sort_options["start_date"])
+
     if isinstance(ordering, str):
         return records.order_by(ordering, "created_at")
 
     return records.order_by(ordering, "created_at")
 
 
-def get_report_context(request, paginate=True):
-    records = get_filtered_records(request)
-    all_records = records
-    all_record_list = list(all_records)
+def get_report_context(request, paginate=True, internal=False):
+    records = get_filtered_records(request, internal=internal)
+    all_record_list = list(records)
 
-    pending_projects = (
-        PendingProjectRecord.objects
-        .exclude(status="Awarded")
-        .order_by("submission_date", "created_at")
-    )
+    if internal:
+        pending_projects = PendingProjectRecord.objects.none()
+    else:
+        pending_projects = (
+            PendingProjectRecord.objects
+            .exclude(status="Awarded")
+            .order_by("submission_date", "created_at")
+        )
 
-    total_contract = sum(
-        record.contract_value for record in all_record_list
-    )
-
-    total_expense = sum(
-        record.expense_value for record in all_record_list
-    )
-
-    total_tax = sum(
-        record.tax_amount for record in all_record_list
-    )
-
-    total_net_contract = sum(
-        record.contract_excluding_tax for record in all_record_list
-    )
-
+    total_contract = sum(record.contract_value for record in all_record_list)
+    total_expense = sum(record.expense_value for record in all_record_list)
+    total_tax = sum(record.tax_amount for record in all_record_list)
+    total_net_contract = sum(record.contract_excluding_tax for record in all_record_list)
     total_profit = total_net_contract - total_expense
-
-    total_paid = sum(
-        record.paid_value for record in all_record_list
-    )
-
+    total_paid = sum(record.paid_value for record in all_record_list)
     total_pending = total_contract - total_paid
 
     company_chart = {}
+
     for record in all_record_list:
         company_name = company_display_name(record.company)
+
         company_data = company_chart.setdefault(company_name, {
             "contract": 0,
             "paid": 0,
@@ -216,6 +203,7 @@ def get_report_context(request, paginate=True):
             "expenses": 0,
             "profit": 0,
         })
+
         company_data["contract"] += money_for_chart(record.contract_value)
         company_data["paid"] += money_for_chart(record.paid_value)
         company_data["balance"] += money_for_chart(record.pending_payment_value)
@@ -227,6 +215,7 @@ def get_report_context(request, paginate=True):
         key=lambda item: item[1]["contract"],
         reverse=True
     )
+
     report_chart_data = {
         "labels": [company for company, data in chart_items],
         "contracts": [data["contract"] for company, data in chart_items],
@@ -238,18 +227,34 @@ def get_report_context(request, paginate=True):
 
     companies = sorted({
         company_display_name(company)
-        for company in list(ProjectRecord.objects.values_list("company", flat=True))
-        + list(PendingProjectRecord.objects.values_list("company", flat=True))
+        for company in list(
+            ProjectRecord.objects
+            .filter(is_internal=internal)
+            .values_list("company", flat=True)
+        )
     })
+
+    if not internal:
+        pending_companies = [
+            company_display_name(company)
+            for company in PendingProjectRecord.objects.values_list(
+                "company",
+                flat=True
+            )
+        ]
+
+        companies = sorted(set(companies + pending_companies))
 
     clients = (
         ProjectRecord.objects
+        .filter(is_internal=internal)
         .values_list("client", flat=True)
         .distinct()
         .order_by("client")
     )
 
     page_obj = None
+
     if paginate:
         paginator = Paginator(records, 25)
         page_obj = paginator.get_page(request.GET.get("page"))
@@ -292,6 +297,8 @@ def get_report_context(request, paginate=True):
         "total_profit": total_profit,
         "total_paid": total_paid,
         "total_pending": total_pending,
+
+        "internal_page": internal,
     }
 
 
@@ -304,7 +311,8 @@ def project_report(request, project_id=None):
     if project_id:
         editing_project = get_object_or_404(
             ProjectRecord,
-            id=project_id
+            id=project_id,
+            is_internal=False
         )
 
     if request.method == "POST":
@@ -323,12 +331,12 @@ def project_report(request, project_id=None):
 
         if editing_project:
             project = editing_project
-
         else:
             project, created = ProjectRecord.objects.get_or_create(
                 company=company,
                 project_supply=project_supply,
                 client=client,
+                is_internal=False,
                 defaults={
                     "contract_value": contract_value,
                     "paid_value": paid_value,
@@ -345,22 +353,103 @@ def project_report(request, project_id=None):
         project.company = company
         project.project_supply = project_supply
         project.client = client
-
         project.contract_value = contract_value
         project.paid_value = paid_value
-
         project.tax_type = tax_type
         project.status = status
-
         project.start_date = start_date
         project.end_date = end_date
-
+        project.is_internal = False
         project.save()
 
         return redirect("project_report")
 
-    context = get_report_context(request)
+    context = get_report_context(request, internal=False)
     context["editing_project"] = editing_project
+
+    return render(
+        request,
+        "reports/project_report.html",
+        context
+    )
+
+
+def internal_project_login(request):
+    if request.method == "POST":
+        code = request.POST.get("code", "").strip()
+
+        if code == INTERNAL_PROJECT_CODE:
+            request.session["internal_project_access"] = True
+            return redirect("internal_project_report")
+
+        return render(
+            request,
+            "reports/internal_login.html",
+            {
+                "error": "Invalid access code"
+            }
+        )
+
+    return render(
+        request,
+        "reports/internal_login.html"
+    )
+
+
+def internal_project_logout(request):
+    request.session.pop("internal_project_access", None)
+    return redirect("project_report")
+
+
+def internal_project_report(request, project_id=None):
+    if not request.session.get("internal_project_access"):
+        return redirect("internal_project_login")
+
+    editing_project = None
+
+    if project_id:
+        editing_project = get_object_or_404(
+            ProjectRecord,
+            id=project_id,
+            is_internal=True
+        )
+
+    if request.method == "POST":
+        company = clean_company_name(request.POST.get("company"))
+        project_supply = request.POST.get("project_supply")
+        client = request.POST.get("client")
+
+        contract_value = request.POST.get("contract_value") or 0
+        paid_value = request.POST.get("paid_value") or 0
+
+        tax_type = request.POST.get("tax_type") or "NONE"
+        status = request.POST.get("status") or "Not started"
+
+        start_date = request.POST.get("start_date") or None
+        end_date = request.POST.get("end_date") or None
+
+        if editing_project:
+            project = editing_project
+        else:
+            project = ProjectRecord()
+
+        project.company = company
+        project.project_supply = project_supply
+        project.client = client
+        project.contract_value = contract_value
+        project.paid_value = paid_value
+        project.tax_type = tax_type
+        project.status = status
+        project.start_date = start_date
+        project.end_date = end_date
+        project.is_internal = True
+        project.save()
+
+        return redirect("internal_project_report")
+
+    context = get_report_context(request, internal=True)
+    context["editing_project"] = editing_project
+    context["internal_page"] = True
 
     return render(
         request,
@@ -371,43 +460,73 @@ def project_report(request, project_id=None):
 
 @staff_member_required
 @require_POST
+def move_project_to_internal(request, project_id):
+    if not password_is_valid(request):
+        return HttpResponse(
+            "Incorrect password. Project was not moved.",
+            status=403
+        )
+
+    project = get_object_or_404(
+        ProjectRecord,
+        id=project_id,
+        is_internal=False
+    )
+
+    project.is_internal = True
+    project.save(update_fields=["is_internal"])
+
+    return redirect("project_report")
+
+
+@require_POST
+def move_project_to_user_view(request, project_id):
+    if not request.session.get("internal_project_access"):
+        return redirect("internal_project_login")
+
+    if not password_is_valid(request):
+        return HttpResponse(
+            "Incorrect password. Project was not moved.",
+            status=403
+        )
+
+    project = get_object_or_404(
+        ProjectRecord,
+        id=project_id,
+        is_internal=True
+    )
+
+    project.is_internal = False
+    project.save(update_fields=["is_internal"])
+
+    return redirect("internal_project_report")
+
+
+@staff_member_required
+@require_POST
 def add_pending_project(request):
-    if request.method == "POST":
+    company = clean_company_name(request.POST.get("company"))
+    project_supply = request.POST.get("project_supply")
+    client = request.POST.get("client")
 
-        company = clean_company_name(request.POST.get("company"))
-        project_supply = request.POST.get("project_supply")
-        client = request.POST.get("client")
+    submission_date = request.POST.get("submission_date") or None
+    expected_award_date = request.POST.get("expected_award_date") or None
+    contract_value = request.POST.get("contract_value") or 0
+    tax_type = request.POST.get("tax_type") or "NONE"
+    status = request.POST.get("status") or "Submitted"
+    notes = request.POST.get("notes", "")
 
-        submission_date = request.POST.get("submission_date") or None
-
-        expected_award_date = (
-            request.POST.get("expected_award_date") or None
-        )
-
-        contract_value = (
-            request.POST.get("contract_value") or 0
-        )
-
-        tax_type = request.POST.get("tax_type") or "NONE"
-
-        status = (
-            request.POST.get("status")
-            or "Submitted"
-        )
-
-        notes = request.POST.get("notes", "")
-
-        PendingProjectRecord.objects.create(
-            company=company,
-            project_supply=project_supply,
-            client=client,
-            submission_date=submission_date,
-            expected_award_date=expected_award_date,
-            contract_value=contract_value,
-            tax_type=tax_type,
-            status=status,
-            notes=notes,
-        )
+    PendingProjectRecord.objects.create(
+        company=company,
+        project_supply=project_supply,
+        client=client,
+        submission_date=submission_date,
+        expected_award_date=expected_award_date,
+        contract_value=contract_value,
+        tax_type=tax_type,
+        status=status,
+        notes=notes,
+    )
 
     return redirect("project_report")
 
@@ -424,15 +543,13 @@ def award_pending_project(request, pending_id):
         company=pending_project.company,
         project_supply=pending_project.project_supply,
         client=pending_project.client,
-
         start_date=None,
         end_date=None,
-
         contract_value=pending_project.contract_value,
         paid_value=0,
-
         tax_type=pending_project.tax_type,
         status="Not started",
+        is_internal=False,
     )
 
     pending_project.status = "Awarded"
@@ -449,7 +566,11 @@ def delete_project_report(request, project_id):
         id=project_id
     )
 
+    is_internal = project.is_internal
     project.delete()
+
+    if is_internal:
+        return redirect("internal_project_report")
 
     return redirect("project_report")
 
@@ -460,18 +581,17 @@ def project_expenses(request, project_id):
         id=project_id
     )
 
+    if project.is_internal and not request.session.get("internal_project_access"):
+        return redirect("internal_project_login")
+
     if request.method == "POST":
-        if not request.user.is_staff:
+        if not request.user.is_staff and not request.session.get("internal_project_access"):
             return redirect(f"{settings.LOGIN_URL}?next={request.path}")
 
         reason = request.POST.get("reason")
-
         tag_name = request.POST.get("tag")
-
         amount = request.POST.get("amount") or 0
-
         notes = request.POST.get("notes", "")
-
         date = request.POST.get("date") or None
 
         tag = None
@@ -505,12 +625,22 @@ def project_expenses(request, project_id):
         {
             "project": project,
             "expenses": expenses,
+            "internal_page": project.is_internal,
         }
     )
 
 
 def generate_project_report_pdf(request):
-    context = get_report_context(request, paginate=False)
+    internal = request.GET.get("internal") == "1"
+
+    if internal and not request.session.get("internal_project_access"):
+        return redirect("internal_project_login")
+
+    context = get_report_context(
+        request,
+        paginate=False,
+        internal=internal
+    )
 
     template = get_template(
         "reports/project_report_pdf.html"
@@ -525,9 +655,11 @@ def generate_project_report_pdf(request):
         content_type="application/pdf"
     )
 
+    filename = "internal_project_report.pdf" if internal else "project_report.pdf"
+
     response[
         "Content-Disposition"
-    ] = 'attachment; filename="project_report.pdf"'
+    ] = f'attachment; filename="{filename}"'
 
     pisa_status = pisa.CreatePDF(
         html,
@@ -588,8 +720,7 @@ def delete_expense(request, project_id, expense_id):
         project=project
     )
 
-    if request.method == "POST":
-        expense.delete()
+    expense.delete()
 
     return redirect(
         "project_expenses",

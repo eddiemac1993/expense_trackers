@@ -19,6 +19,107 @@ except Exception:
 from .models import ProjectRecord, Payment
 
 
+from django.contrib.auth.decorators import login_required
+
+
+INTERNAL_CODE = "solid2026"
+
+
+def internal_login(request):
+    if request.method == "POST":
+        code = request.POST.get("code")
+
+        if code == INTERNAL_CODE:
+            request.session["internal_access"] = True
+            messages.success(request, "Internal access granted.")
+            return redirect("projections:internal_dashboard")
+
+        messages.error(request, "Invalid internal access code.")
+
+    return render(request, "projections/internal_login.html")
+
+
+def internal_logout(request):
+    request.session.pop("internal_access", None)
+    messages.success(request, "Internal access closed.")
+    return redirect("projections:dashboardpro")
+
+
+def internal_dashboard(request):
+    if not request.session.get("internal_access"):
+        return redirect("projections:internal_login")
+
+    if request.method == "POST":
+        company_select = request.POST.get("company_select")
+        company_new = request.POST.get("company_new", "").strip()
+
+        if company_select == "__new__":
+            company_name = company_new
+        else:
+            company_name = company_select
+
+        ProjectRecord.objects.create(
+            title=request.POST.get("title"),
+            description=request.POST.get("description"),
+            company=company_name,
+            customer=request.POST.get("customer"),
+            amount=request.POST.get("amount"),
+            project_date=request.POST.get("project_date"),
+            status=request.POST.get("status"),
+            completion_status=request.POST.get(
+                "completion_status",
+                "PENDING_EVALUATION"
+            ),
+            is_internal=True,
+        )
+
+        messages.success(request, "Internal project added successfully.")
+        return redirect("projections:internal_dashboard")
+
+    records = ProjectRecord.objects.filter(
+        is_active=True,
+        is_internal=True
+    ).order_by("-project_date")
+
+    companies = (
+        records.values_list("company", flat=True)
+        .distinct()
+        .order_by("company")
+    )
+
+    years = (
+        records.values_list("year", flat=True)
+        .distinct()
+        .order_by("-year")
+    )
+
+    total_won = records.filter(status="WON").aggregate(
+        total=Sum("amount")
+    ).get("total") or Decimal("0.00")
+
+    total_lost = records.filter(status="LOST").aggregate(
+        total=Sum("amount")
+    ).get("total") or Decimal("0.00")
+
+    total_pending = records.filter(status="PENDING").aggregate(
+        total=Sum("amount")
+    ).get("total") or Decimal("0.00")
+
+    overall_total_amount = records.aggregate(
+        total=Sum("amount")
+    ).get("total") or Decimal("0.00")
+
+    return render(request, "projections/internal_dashboard.html", {
+        "records": records,
+        "companies": companies,
+        "years": years,
+        "total_won": total_won,
+        "total_lost": total_lost,
+        "total_pending": total_pending,
+        "overall_total_amount": overall_total_amount,
+        "internal_page": True,
+    })
+
 @require_http_methods(["GET", "POST"])
 def projection_dashboard(request):
     """

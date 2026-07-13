@@ -27,6 +27,8 @@ class ProjectRecord(models.Model):
     contract_value = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     paid_value = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
+    is_internal = models.BooleanField(default=False, db_index=True)
+
     tax_type = models.CharField(
         max_length=10,
         choices=TAX_CHOICES,

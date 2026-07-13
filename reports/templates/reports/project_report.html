@@ -3,8 +3,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Project Report</title>
+    <title>{% if internal_page %}Internal Project Report{% else %}Project Report{% endif %}</title>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
     <style>
         *{
@@ -86,6 +88,27 @@
             background:#2563eb;
             padding:8px 12px;
             font-size:12px;
+        }
+
+        .move-btn{
+            background:#f59e0b;
+            color:#111827;
+            padding:8px 12px;
+            font-size:12px;
+        }
+
+        .back-move-btn{
+            background:#7c3aed;
+            padding:8px 12px;
+            font-size:12px;
+        }
+
+        .whatsapp-btn{
+            background:#16a34a;
+        }
+
+        .image-btn{
+            background:#0f766e;
         }
 
         .edit-mode{
@@ -375,6 +398,59 @@
             padding:8px 12px;
         }
 
+        .modal-overlay{
+            display:none;
+            position:fixed;
+            inset:0;
+            background:rgba(17,24,39,0.65);
+            z-index:9999;
+            align-items:center;
+            justify-content:center;
+            padding:20px;
+        }
+
+        .modal-box{
+            background:white;
+            width:100%;
+            max-width:430px;
+            border-radius:16px;
+            padding:24px;
+            box-shadow:0 25px 60px rgba(0,0,0,0.25);
+        }
+
+        .modal-box h3{
+            margin-bottom:8px;
+            font-size:22px;
+        }
+
+        .modal-box p{
+            color:#6b7280;
+            margin-bottom:16px;
+            line-height:1.5;
+        }
+
+        .modal-box input{
+            width:100%;
+            padding:12px;
+            border:1px solid #d1d5db;
+            border-radius:9px;
+            font-size:15px;
+            margin-bottom:16px;
+        }
+
+        .modal-actions{
+            display:flex;
+            gap:10px;
+            justify-content:flex-end;
+            flex-wrap:wrap;
+        }
+
+        .share-note{
+            color:#2563eb;
+            font-size:13px;
+            margin-bottom:18px;
+        }
+
         @media(max-width:768px){
             body{
                 padding:10px;
@@ -401,6 +477,10 @@
             .table-container{
                 max-height:70vh;
             }
+
+            .modal-actions .btn{
+                width:100%;
+            }
         }
     </style>
 </head>
@@ -411,37 +491,65 @@
 
     <div class="top-bar">
         <div>
-            <h1>Project / Supply Report</h1>
+            <h1>
+                {% if internal_page %}
+                    Internal Project / Supply Report
+                {% else %}
+                    Project / Supply Report
+                {% endif %}
+            </h1>
             <p>Contracts, tax, expenses, profits, pending payments and pending awards tracking</p>
         </div>
 
-<div class="actions">
+        <div class="actions">
+            {% if internal_page %}
+                <a href="{% url 'internal_project_logout' %}" class="btn danger-btn">
+                    Close Internal View
+                </a>
+            {% else %}
+                <a href="{% url 'internal_project_login' %}" class="btn move-btn">
+                    Internal Projects
+                </a>
+            {% endif %}
 
-    <a href="{% url 'projections:dashboardpro' %}" class="btn">
-        Project Projections
-    </a>
+            <a href="{% url 'projections:dashboardpro' %}" class="btn">
+                Project Projections
+            </a>
 
-    <a href="{% url 'paper_list' %}" class="btn">
-        Papers
-    </a>
+            <a href="{% url 'paper_list' %}" class="btn">
+                Papers
+            </a>
 
-    <a href="{% url 'documents:document_list' %}" class="btn">
-        Documents
-    </a>
+            <a href="{% url 'documents:document_list' %}" class="btn">
+                Documents
+            </a>
 
-    <a href="{% url 'tracker:dashboard' %}" class="btn">
-        Expenses
-    </a>
+            <a href="{% url 'tracker:dashboard' %}" class="btn">
+                Expenses
+            </a>
 
-    <a href="{% url 'project_report' %}" class="btn">
-        Report
-    </a>
+            <a href="{% url 'project_report' %}" class="btn">
+                Report
+            </a>
 
-    <a href="{% url 'project_report_pdf' %}?{{ request.GET.urlencode }}" class="btn">
-        Generate PDF
-    </a>
+            {% if internal_page %}
+                <a href="{% url 'project_report_pdf' %}?internal=1&{{ request.GET.urlencode }}" class="btn">
+                    Generate PDF
+                </a>
+            {% else %}
+                <a href="{% url 'project_report_pdf' %}?{{ request.GET.urlencode }}" class="btn">
+                    Generate PDF
+                </a>
+            {% endif %}
 
-</div>
+            <button type="button" class="btn image-btn" onclick="downloadTableImage()">
+                Download Table Image
+            </button>
+
+            <button type="button" class="btn whatsapp-btn" onclick="shareTableImageWhatsApp()">
+                Share to WhatsApp
+            </button>
+        </div>
     </div>
 
     <div class="summary">
@@ -482,6 +590,10 @@
         </div>
 
     </div>
+
+    <p class="share-note">
+        The image export uses the records currently displayed after your filters are applied.
+    </p>
 
     <div class="chart-card">
         <div class="chart-header">
@@ -598,9 +710,15 @@
                 </button>
 
                 {% if editing_project %}
-                    <a href="{% url 'project_report' %}" class="btn clear-btn">
-                        Cancel Edit
-                    </a>
+                    {% if internal_page %}
+                        <a href="{% url 'internal_project_report' %}" class="btn clear-btn">
+                            Cancel Edit
+                        </a>
+                    {% else %}
+                        <a href="{% url 'project_report' %}" class="btn clear-btn">
+                            Cancel Edit
+                        </a>
+                    {% endif %}
                 {% endif %}
             </div>
 
@@ -608,7 +726,7 @@
 
     </div>
 
-    {% if not editing_project %}
+    {% if not editing_project and not internal_page %}
 
     <div class="form-box">
 
@@ -803,7 +921,12 @@
 
             <div class="filter-actions">
                 <button type="submit" class="btn">Apply Filters</button>
-                <a href="{% url 'project_report' %}" class="btn clear-btn">Clear Filters</a>
+
+                {% if internal_page %}
+                    <a href="{% url 'internal_project_report' %}" class="btn clear-btn">Clear Filters</a>
+                {% else %}
+                    <a href="{% url 'project_report' %}" class="btn clear-btn">Clear Filters</a>
+                {% endif %}
             </div>
 
         </form>
@@ -828,7 +951,12 @@
 
         <div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
             <button type="submit" class="btn">Filter Selected Projects</button>
-            <a href="{% url 'project_report' %}" class="btn clear-btn">Show All Projects</a>
+
+            {% if internal_page %}
+                <a href="{% url 'internal_project_report' %}" class="btn clear-btn">Show All Projects</a>
+            {% else %}
+                <a href="{% url 'project_report' %}" class="btn clear-btn">Show All Projects</a>
+            {% endif %}
         </div>
 
         <div class="table-container">
@@ -928,13 +1056,37 @@
                             {% if request.user.is_authenticated and request.user.is_staff %}
                                 <div class="action-buttons">
 
-                                    <a href="{% url 'edit_project_report' record.id %}" class="btn award-btn">
-                                        Edit
-                                    </a>
+                                    {% if internal_page %}
+                                        <a href="{% url 'internal_edit_project_report' record.id %}" class="btn award-btn">
+                                            Edit
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'edit_project_report' record.id %}" class="btn award-btn">
+                                            Edit
+                                        </a>
+                                    {% endif %}
 
                                     <a href="{% url 'project_expenses' record.id %}" class="btn expense-btn">
                                         Expenses
                                     </a>
+
+                                    {% if internal_page %}
+                                        <button
+                                            type="button"
+                                            class="btn back-move-btn"
+                                            onclick="openMoveModal('{{ record.id }}', 'user')">
+                                            Move to User View
+                                        </button>
+                                    {% else %}
+                                        <button
+                                            type="button"
+                                            class="btn move-btn"
+                                            onclick="openMoveModal('{{ record.id }}', 'internal')">
+                                            Move to Internal
+                                        </button>
+                                    {% endif %}
+
+
                                 </div>
                             {% endif %}
                         </td>
@@ -977,6 +1129,7 @@
         </div>
     {% endif %}
 
+    {% if not internal_page %}
     <h2 class="section-title">Pending / Not Yet Awarded Projects</h2>
 
     <div class="table-container">
@@ -1056,7 +1209,94 @@
         </table>
 
     </div>
+    {% endif %}
 
+</div>
+
+<div id="whatsapp-image-report" style="position:absolute; left:-99999px; top:0; background:white; padding:28px; width:1500px; font-family:Arial,sans-serif; color:#111827;">
+    <h2 style="text-align:center; margin-bottom:5px;">
+        {% if internal_page %}
+            Internal Project Report
+        {% else %}
+            Project Report
+        {% endif %}
+    </h2>
+
+    <p style="text-align:center; margin-bottom:18px; color:#555;">
+        Value, expenses, tax and profit according to current filters
+    </p>
+
+    <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:0;">
+        <thead>
+            <tr>
+                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">#</th>
+                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Company</th>
+                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Project / Supply</th>
+                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Client</th>
+                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Value</th>
+                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Expense</th>
+                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Tax</th>
+                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Profit</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td style="border:1px solid #111; padding:8px;">{{ forloop.counter }}</td>
+                <td style="border:1px solid #111; padding:8px;">{{ record.company }}</td>
+                <td style="border:1px solid #111; padding:8px;">{{ record.project_supply }}</td>
+                <td style="border:1px solid #111; padding:8px;">{{ record.client }}</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ record.contract_value|floatformat:2|intcomma }}</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ record.expense_value|floatformat:2|intcomma }}</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ record.tax_amount|floatformat:2|intcomma }}</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ record.profit_value|floatformat:2|intcomma }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="border:1px solid #111; padding:18px; text-align:center;">
+                    No projects available for the current filters.
+                </td>
+            </tr>
+            {% endfor %}
+
+            <tr style="font-weight:bold; background:#f3f4f6;">
+                <td colspan="4" style="border:1px solid #111; padding:8px; text-align:center;">TOTAL</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ total_contract|floatformat:2|intcomma }}</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ total_expense|floatformat:2|intcomma }}</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ total_tax|floatformat:2|intcomma }}</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ total_profit|floatformat:2|intcomma }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="modal-overlay" id="movePasswordModal">
+    <div class="modal-box">
+        <h3 id="moveModalTitle">Move Project</h3>
+        <p id="moveModalText">Enter the internal password to continue.</p>
+
+        <form method="post" id="movePasswordForm">
+            {% csrf_token %}
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Enter password"
+                required
+            >
+
+            <div class="modal-actions">
+                <button type="button" class="btn clear-btn" onclick="closeMoveModal()">
+                    Cancel
+                </button>
+
+                <button type="submit" class="btn move-btn" id="moveSubmitButton">
+                    Continue
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 {{ report_chart_data|json_script:"report-chart-data" }}
@@ -1178,6 +1418,94 @@
                 checkbox.checked = selectAll.checked;
             });
         });
+    }
+
+    function openMoveModal(projectId, direction) {
+        const modal = document.getElementById("movePasswordModal");
+        const form = document.getElementById("movePasswordForm");
+        const title = document.getElementById("moveModalTitle");
+        const text = document.getElementById("moveModalText");
+        const button = document.getElementById("moveSubmitButton");
+
+        if (direction === "internal") {
+            form.action = "/project/" + projectId + "/move-to-internal/";
+            title.textContent = "Move to Internal View";
+            text.textContent = "Enter the internal password to move this project from user view to internal view.";
+            button.textContent = "Move to Internal";
+        } else {
+            form.action = "/project/" + projectId + "/move-to-user-view/";
+            title.textContent = "Move to User View";
+            text.textContent = "Enter the internal password to move this project back to user view.";
+            button.textContent = "Move to User View";
+        }
+
+        modal.style.display = "flex";
+    }
+
+    function closeMoveModal() {
+        const modal = document.getElementById("movePasswordModal");
+        const form = document.getElementById("movePasswordForm");
+
+        form.reset();
+        modal.style.display = "none";
+    }
+
+    async function createTableImageBlob() {
+        const report = document.getElementById("whatsapp-image-report");
+
+        const canvas = await html2canvas(report, {
+            backgroundColor: "#ffffff",
+            scale: 2,
+            useCORS: true
+        });
+
+        return new Promise(function(resolve) {
+            canvas.toBlob(function(blob) {
+                resolve(blob);
+            }, "image/png");
+        });
+    }
+
+    async function downloadTableImage() {
+        const blob = await createTableImageBlob();
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "project-report-table.png";
+        link.click();
+
+        URL.revokeObjectURL(url);
+    }
+
+    async function shareTableImageWhatsApp() {
+        const blob = await createTableImageBlob();
+
+        const file = new File(
+            [blob],
+            "project-report-table.png",
+            { type: "image/png" }
+        );
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: "Project Report",
+                text: "Project report table"
+            });
+        } else {
+            alert("Your browser cannot share images directly. The image will be downloaded instead. You can then send it on WhatsApp.");
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = "project-report-table.png";
+            link.click();
+
+            URL.revokeObjectURL(url);
+        }
     }
 
     document.addEventListener("DOMContentLoaded", initReportChart);

@@ -67,7 +67,7 @@
     <!-- HEADER -->
     <div class="page-header">
         <div>
-            <h3 class="mb-0">Project Projections</h3>
+            <h2>Internal Projects Dashboard</h2>
             <div class="text-muted small">
                 Commercial & execution performance summary
             </div>
@@ -82,8 +82,8 @@
                     data-bs-target="#addProjectModal">
                 + Add Project
             </button>
-<a href="{% url 'projections:internal_login' %}" class="btn btn-warning">
-    Internal Projects
+<a href="{% url 'projections:internal_logout' %}" class="btn btn-danger">
+    Close Internal Access
 </a>
             <a href="{% url 'projections:export_pdf' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
                class="btn btn-success btn-sm" target="_blank">

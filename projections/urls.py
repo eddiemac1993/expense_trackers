@@ -25,5 +25,9 @@ urlpatterns = [
     name='edit_payment'
 ),
 
+    path('internal-login/', views.internal_login, name='internal_login'),
+    path('internal/', views.internal_dashboard, name='internal_dashboard'),
+    path('internal/logout/', views.internal_logout, name='internal_logout'),
+
     path('payments/pdf/', views.payments_dashboard_pdf, name='payments_dashboard_pdf'),
 ]

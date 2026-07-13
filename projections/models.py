@@ -75,6 +75,11 @@ class ProjectRecord(models.Model):
         auto_now_add=True
     )
 
+    is_internal = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Only visible on internal dashboard"
+    )
     class Meta:
         ordering = ['-project_date']
 
