@@ -247,13 +247,23 @@
                 <td>{{ record.start_date|default:"-" }}</td>
                 <td>{{ record.end_date|default:"-" }}</td>
 
-                <td class="money">ZMW {{ record.contract_value|floatformat:2|intcomma }}</td>
+                <td class="money">
+                    {{ record.currency }} {{ record.contract_value|floatformat:2|intcomma }}
+                    {% if record.uses_foreign_currency %}
+                        <br>ZMW {{ record.contract_value_zmw|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
                 <td>{{ record.get_tax_type_display }}</td>
                 <td class="tax-money">ZMW {{ record.tax_amount|floatformat:2|intcomma }}</td>
                 <td class="net-money">ZMW {{ record.contract_excluding_tax|floatformat:2|intcomma }}</td>
                 <td class="money">ZMW {{ record.expense_value|floatformat:2|intcomma }}</td>
                 <td class="money">ZMW {{ record.profit_value|floatformat:2|intcomma }}</td>
-                <td class="money">ZMW {{ record.paid_value|floatformat:2|intcomma }}</td>
+                <td class="money">
+                    {{ record.currency }} {{ record.paid_value|floatformat:2|intcomma }}
+                    {% if record.uses_foreign_currency %}
+                        <br>ZMW {{ record.paid_value_zmw|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
                 <td class="pending-money">ZMW {{ record.pending_payment_value|floatformat:2|intcomma }}</td>
 
                 <td class="status">
@@ -318,7 +328,12 @@
                 <td>{{ pending.client }}</td>
                 <td>{{ pending.submission_date|default:"-" }}</td>
                 <td>{{ pending.expected_award_date|default:"-" }}</td>
-                <td class="money">ZMW {{ pending.contract_value|floatformat:2|intcomma }}</td>
+                <td class="money">
+                    {{ pending.currency }} {{ pending.contract_value|floatformat:2|intcomma }}
+                    {% if pending.uses_foreign_currency %}
+                        <br>ZMW {{ pending.contract_value_zmw|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
                 <td>{{ pending.get_tax_type_display }}</td>
 
                 <td class="status">

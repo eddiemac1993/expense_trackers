@@ -207,6 +207,15 @@
             resize:vertical;
         }
 
+        .form-group small,
+        .muted-money{
+            display:block;
+            margin-top:4px;
+            color:#64748b;
+            font-size:11px;
+            line-height:1.35;
+        }
+
         .form-actions,
         .filter-actions{
             display:flex;
@@ -669,6 +678,35 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Currency</label>
+                    <select name="currency">
+                        {% for value, label in currencies %}
+                            <option value="{{ value }}"
+                                {% if editing_project and editing_project.currency == value %}
+                                    selected
+                                {% elif not editing_project and value == "ZMW" %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Rate to ZMW</label>
+                    <input
+                        type="number"
+                        step="0.0001"
+                        min="0"
+                        name="exchange_rate"
+                        value="{{ editing_project.exchange_rate|default:'1' }}"
+                    >
+                    <small>For USD, enter how many ZMW equals 1 USD.</small>
+                </div>
+
+                <div class="form-group">
                     <label>Tax Type</label>
                     <select name="tax_type">
                         {% for value, label in tax_types %}
@@ -765,6 +803,22 @@
                 <div class="form-group">
                     <label>Expected Contract Value</label>
                     <input type="number" step="0.01" name="contract_value">
+                </div>
+
+                <div class="form-group">
+                    <label>Currency</label>
+                    <select name="currency">
+                        {% for value, label in currencies %}
+                            <option value="{{ value }}" {% if value == "ZMW" %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Rate to ZMW</label>
+                    <input type="number" step="0.0001" min="0" name="exchange_rate" value="1">
                 </div>
 
                 <div class="form-group">
@@ -1009,7 +1063,13 @@
                         <td>{{ record.end_date|default:"—" }}</td>
 
                         <td class="money">
-                            ZMW {{ record.contract_value|floatformat:2|intcomma }}
+                            {{ record.currency }} {{ record.contract_value|floatformat:2|intcomma }}
+                            {% if record.uses_foreign_currency %}
+                                <div class="muted-money">
+                                    ZMW {{ record.contract_value_zmw|floatformat:2|intcomma }}
+                                    @ {{ record.exchange_rate|floatformat:4 }}
+                                </div>
+                            {% endif %}
                         </td>
 
                         <td>{{ record.get_tax_type_display }}</td>
@@ -1033,7 +1093,12 @@
                         </td>
 
                         <td class="money">
-                            ZMW {{ record.paid_value|floatformat:2|intcomma }}
+                            {{ record.currency }} {{ record.paid_value|floatformat:2|intcomma }}
+                            {% if record.uses_foreign_currency %}
+                                <div class="muted-money">
+                                    ZMW {{ record.paid_value_zmw|floatformat:2|intcomma }}
+                                </div>
+                            {% endif %}
                         </td>
 
                         <td class="pending-money">
@@ -1164,7 +1229,13 @@
                     <td>{{ pending.expected_award_date|default:"—" }}</td>
 
                     <td class="money">
-                        ZMW {{ pending.contract_value|floatformat:2|intcomma }}
+                        {{ pending.currency }} {{ pending.contract_value|floatformat:2|intcomma }}
+                        {% if pending.uses_foreign_currency %}
+                            <div class="muted-money">
+                                ZMW {{ pending.contract_value_zmw|floatformat:2|intcomma }}
+                                @ {{ pending.exchange_rate|floatformat:4 }}
+                            </div>
+                        {% endif %}
                     </td>
 
                     <td>{{ pending.get_tax_type_display }}</td>
@@ -1247,7 +1318,12 @@
                 <td style="border:1px solid #111; padding:8px;">{{ record.company }}</td>
                 <td style="border:1px solid #111; padding:8px;">{{ record.project_supply }}</td>
                 <td style="border:1px solid #111; padding:8px;">{{ record.client }}</td>
-                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ record.contract_value|floatformat:2|intcomma }}</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">
+                    ZMW {{ record.contract_value_zmw|floatformat:2|intcomma }}
+                    {% if record.uses_foreign_currency %}
+                        <br>{{ record.currency }} {{ record.contract_value|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
                 <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ record.expense_value|floatformat:2|intcomma }}</td>
                 <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ record.tax_amount|floatformat:2|intcomma }}</td>
                 <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ record.profit_value|floatformat:2|intcomma }}</td>

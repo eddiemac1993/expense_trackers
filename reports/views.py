@@ -1,3 +1,5 @@
+from decimal import Decimal, InvalidOperation
+
 from django.contrib.admin.views.decorators import staff_member_required
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -9,6 +11,7 @@ from django.views.decorators.http import require_POST
 from xhtml2pdf import pisa
 
 from .models import (
+    CURRENCY_CHOICES,
     ExpenseTag,
     PendingProjectRecord,
     ProjectExpense,
@@ -76,6 +79,29 @@ def company_display_name(name):
 
 def money_for_chart(value):
     return float(value or 0)
+
+
+def clean_currency(value):
+    valid_currencies = {currency for currency, label in CURRENCY_CHOICES}
+    if value in valid_currencies:
+        return value
+
+    return "ZMW"
+
+
+def clean_exchange_rate(value, currency):
+    if currency == "ZMW":
+        return Decimal("1.00")
+
+    try:
+        rate = Decimal(value or "1")
+    except (InvalidOperation, TypeError):
+        return Decimal("1.00")
+
+    if rate <= 0:
+        return Decimal("1.00")
+
+    return rate
 
 
 def password_is_valid(request):
@@ -183,12 +209,12 @@ def get_report_context(request, paginate=True, internal=False):
             .order_by("submission_date", "created_at")
         )
 
-    total_contract = sum(record.contract_value for record in all_record_list)
+    total_contract = sum(record.contract_value_zmw for record in all_record_list)
     total_expense = sum(record.expense_value for record in all_record_list)
     total_tax = sum(record.tax_amount for record in all_record_list)
     total_net_contract = sum(record.contract_excluding_tax for record in all_record_list)
     total_profit = total_net_contract - total_expense
-    total_paid = sum(record.paid_value for record in all_record_list)
+    total_paid = sum(record.paid_value_zmw for record in all_record_list)
     total_pending = total_contract - total_paid
 
     company_chart = {}
@@ -204,8 +230,8 @@ def get_report_context(request, paginate=True, internal=False):
             "profit": 0,
         })
 
-        company_data["contract"] += money_for_chart(record.contract_value)
-        company_data["paid"] += money_for_chart(record.paid_value)
+        company_data["contract"] += money_for_chart(record.contract_value_zmw)
+        company_data["paid"] += money_for_chart(record.paid_value_zmw)
         company_data["balance"] += money_for_chart(record.pending_payment_value)
         company_data["expenses"] += money_for_chart(record.expense_value)
         company_data["profit"] += money_for_chart(record.profit_value)
@@ -276,6 +302,7 @@ def get_report_context(request, paginate=True, internal=False):
 
         "statuses": ProjectRecord.STATUS_CHOICES,
         "tax_types": ProjectRecord.TAX_CHOICES,
+        "currencies": CURRENCY_CHOICES,
         "pending_statuses": PendingProjectRecord.STATUS_CHOICES,
 
         "selected_search": request.GET.get("q", "").strip(),
@@ -322,6 +349,11 @@ def project_report(request, project_id=None):
 
         contract_value = request.POST.get("contract_value") or 0
         paid_value = request.POST.get("paid_value") or 0
+        currency = clean_currency(request.POST.get("currency"))
+        exchange_rate = clean_exchange_rate(
+            request.POST.get("exchange_rate"),
+            currency
+        )
 
         tax_type = request.POST.get("tax_type") or "NONE"
         status = request.POST.get("status") or "Not started"
@@ -340,6 +372,8 @@ def project_report(request, project_id=None):
                 defaults={
                     "contract_value": contract_value,
                     "paid_value": paid_value,
+                    "currency": currency,
+                    "exchange_rate": exchange_rate,
                     "tax_type": tax_type,
                     "status": status,
                     "start_date": start_date,
@@ -355,6 +389,8 @@ def project_report(request, project_id=None):
         project.client = client
         project.contract_value = contract_value
         project.paid_value = paid_value
+        project.currency = currency
+        project.exchange_rate = exchange_rate
         project.tax_type = tax_type
         project.status = status
         project.start_date = start_date
@@ -421,6 +457,11 @@ def internal_project_report(request, project_id=None):
 
         contract_value = request.POST.get("contract_value") or 0
         paid_value = request.POST.get("paid_value") or 0
+        currency = clean_currency(request.POST.get("currency"))
+        exchange_rate = clean_exchange_rate(
+            request.POST.get("exchange_rate"),
+            currency
+        )
 
         tax_type = request.POST.get("tax_type") or "NONE"
         status = request.POST.get("status") or "Not started"
@@ -438,6 +479,8 @@ def internal_project_report(request, project_id=None):
         project.client = client
         project.contract_value = contract_value
         project.paid_value = paid_value
+        project.currency = currency
+        project.exchange_rate = exchange_rate
         project.tax_type = tax_type
         project.status = status
         project.start_date = start_date
@@ -512,6 +555,11 @@ def add_pending_project(request):
     submission_date = request.POST.get("submission_date") or None
     expected_award_date = request.POST.get("expected_award_date") or None
     contract_value = request.POST.get("contract_value") or 0
+    currency = clean_currency(request.POST.get("currency"))
+    exchange_rate = clean_exchange_rate(
+        request.POST.get("exchange_rate"),
+        currency
+    )
     tax_type = request.POST.get("tax_type") or "NONE"
     status = request.POST.get("status") or "Submitted"
     notes = request.POST.get("notes", "")
@@ -523,6 +571,8 @@ def add_pending_project(request):
         submission_date=submission_date,
         expected_award_date=expected_award_date,
         contract_value=contract_value,
+        currency=currency,
+        exchange_rate=exchange_rate,
         tax_type=tax_type,
         status=status,
         notes=notes,
@@ -546,6 +596,8 @@ def award_pending_project(request, pending_id):
         start_date=None,
         end_date=None,
         contract_value=pending_project.contract_value,
+        currency=pending_project.currency,
+        exchange_rate=pending_project.exchange_rate,
         paid_value=0,
         tax_type=pending_project.tax_type,
         status="Not started",
@@ -591,6 +643,11 @@ def project_expenses(request, project_id):
         reason = request.POST.get("reason")
         tag_name = request.POST.get("tag")
         amount = request.POST.get("amount") or 0
+        currency = clean_currency(request.POST.get("currency") or project.currency)
+        exchange_rate = clean_exchange_rate(
+            request.POST.get("exchange_rate") or project.exchange_rate,
+            currency
+        )
         notes = request.POST.get("notes", "")
         date = request.POST.get("date") or None
 
@@ -605,6 +662,8 @@ def project_expenses(request, project_id):
             reason=reason,
             tag=tag,
             amount=amount,
+            currency=currency,
+            exchange_rate=exchange_rate,
             notes=notes,
             date=date,
         )
@@ -625,6 +684,7 @@ def project_expenses(request, project_id):
         {
             "project": project,
             "expenses": expenses,
+            "currencies": CURRENCY_CHOICES,
             "internal_page": project.is_internal,
         }
     )
@@ -688,6 +748,11 @@ def edit_expense(request, project_id, expense_id):
     if request.method == "POST":
         expense.reason = request.POST.get("reason")
         expense.amount = request.POST.get("amount") or 0
+        expense.currency = clean_currency(request.POST.get("currency"))
+        expense.exchange_rate = clean_exchange_rate(
+            request.POST.get("exchange_rate"),
+            expense.currency
+        )
         expense.notes = request.POST.get("notes", "")
         expense.date = request.POST.get("date") or None
 

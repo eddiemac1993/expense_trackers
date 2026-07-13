@@ -17,6 +17,8 @@ class ProjectExpenseInline(admin.TabularInline):
         "reason",
         "tag",
         "amount",
+        "currency",
+        "exchange_rate",
         "notes",
     )
 
@@ -29,6 +31,8 @@ class ProjectRecordAdmin(admin.ModelAdmin):
         "client",
         "start_date",
         "end_date",
+        "currency",
+        "exchange_rate",
         "contract_value",
         "tax_type",
         "tax_amount",
@@ -36,6 +40,7 @@ class ProjectRecordAdmin(admin.ModelAdmin):
         "expense_value",
         "profit_value",
         "paid_value",
+        "paid_value_zmw",
         "pending_payment_value",
         "status",
     )
@@ -43,6 +48,7 @@ class ProjectRecordAdmin(admin.ModelAdmin):
     list_filter = (
         "status",
         "tax_type",
+        "currency",
         "company",
         "client",
         "start_date",
@@ -58,6 +64,8 @@ class ProjectRecordAdmin(admin.ModelAdmin):
         "tax_rate",
         "tax_amount",
         "contract_excluding_tax",
+        "contract_value_zmw",
+        "paid_value_zmw",
         "expense_value",
         "profit_value",
         "pending_payment_value",
@@ -85,11 +93,15 @@ class ProjectRecordAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "contract_value",
+                    "currency",
+                    "exchange_rate",
+                    "contract_value_zmw",
                     "tax_type",
                     "tax_rate",
                     "tax_amount",
                     "contract_excluding_tax",
                     "paid_value",
+                    "paid_value_zmw",
                     "pending_payment_value",
                     "expense_value",
                     "profit_value",
@@ -125,6 +137,8 @@ class PendingProjectRecordAdmin(admin.ModelAdmin):
         "client",
         "submission_date",
         "expected_award_date",
+        "currency",
+        "exchange_rate",
         "contract_value",
         "tax_type",
         "status",
@@ -134,6 +148,7 @@ class PendingProjectRecordAdmin(admin.ModelAdmin):
     list_filter = (
         "status",
         "tax_type",
+        "currency",
         "company",
         "client",
         "submission_date",
@@ -171,6 +186,8 @@ class PendingProjectRecordAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "contract_value",
+                    "currency",
+                    "exchange_rate",
                     "tax_type",
                 )
             },
@@ -208,12 +225,16 @@ class ProjectExpenseAdmin(admin.ModelAdmin):
         "date",
         "reason",
         "tag",
+        "currency",
+        "exchange_rate",
         "amount",
+        "amount_zmw",
         "created_at",
     )
 
     list_filter = (
         "tag",
+        "currency",
         "date",
         "project__company",
     )
@@ -227,6 +248,7 @@ class ProjectExpenseAdmin(admin.ModelAdmin):
     )
 
     readonly_fields = (
+        "amount_zmw",
         "created_at",
     )
 
