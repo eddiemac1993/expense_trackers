@@ -1076,20 +1076,40 @@
 
                         <td class="tax-money">
                             ZMW {{ record.tax_amount|floatformat:2|intcomma }}
+                            {% if record.uses_foreign_currency %}
+                                <div class="muted-money">
+                                    {{ record.currency }} {{ record.tax_amount_project_currency|floatformat:2|intcomma }}
+                                </div>
+                            {% endif %}
                         </td>
 
                         <td class="net-money">
                             ZMW {{ record.contract_excluding_tax|floatformat:2|intcomma }}
+                            {% if record.uses_foreign_currency %}
+                                <div class="muted-money">
+                                    {{ record.currency }} {{ record.contract_excluding_tax_project_currency|floatformat:2|intcomma }}
+                                </div>
+                            {% endif %}
                         </td>
 
                         <td>
                             <a class="expense-link" href="{% url 'project_expenses' record.id %}">
                                 ZMW {{ record.expense_value|floatformat:2|intcomma }}
                             </a>
+                            {% if record.uses_foreign_currency %}
+                                <div class="muted-money">
+                                    {{ record.currency }} {{ record.expense_value_project_currency|floatformat:2|intcomma }}
+                                </div>
+                            {% endif %}
                         </td>
 
                         <td class="money">
                             ZMW {{ record.profit_value|floatformat:2|intcomma }}
+                            {% if record.uses_foreign_currency %}
+                                <div class="muted-money">
+                                    {{ record.currency }} {{ record.profit_value_project_currency|floatformat:2|intcomma }}
+                                </div>
+                            {% endif %}
                         </td>
 
                         <td class="money">
@@ -1324,9 +1344,19 @@
                         <br>{{ record.currency }} {{ record.contract_value|floatformat:2|intcomma }}
                     {% endif %}
                 </td>
-                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ record.expense_value|floatformat:2|intcomma }}</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">
+                    ZMW {{ record.expense_value|floatformat:2|intcomma }}
+                    {% if record.uses_foreign_currency %}
+                        <br>{{ record.currency }} {{ record.expense_value_project_currency|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
                 <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ record.tax_amount|floatformat:2|intcomma }}</td>
-                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ record.profit_value|floatformat:2|intcomma }}</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">
+                    ZMW {{ record.profit_value|floatformat:2|intcomma }}
+                    {% if record.uses_foreign_currency %}
+                        <br>{{ record.currency }} {{ record.profit_value_project_currency|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
             </tr>
             {% empty %}
             <tr>

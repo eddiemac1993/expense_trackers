@@ -254,10 +254,30 @@
                     {% endif %}
                 </td>
                 <td>{{ record.get_tax_type_display }}</td>
-                <td class="tax-money">ZMW {{ record.tax_amount|floatformat:2|intcomma }}</td>
-                <td class="net-money">ZMW {{ record.contract_excluding_tax|floatformat:2|intcomma }}</td>
-                <td class="money">ZMW {{ record.expense_value|floatformat:2|intcomma }}</td>
-                <td class="money">ZMW {{ record.profit_value|floatformat:2|intcomma }}</td>
+                <td class="tax-money">
+                    ZMW {{ record.tax_amount|floatformat:2|intcomma }}
+                    {% if record.uses_foreign_currency %}
+                        <br>{{ record.currency }} {{ record.tax_amount_project_currency|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
+                <td class="net-money">
+                    ZMW {{ record.contract_excluding_tax|floatformat:2|intcomma }}
+                    {% if record.uses_foreign_currency %}
+                        <br>{{ record.currency }} {{ record.contract_excluding_tax_project_currency|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
+                <td class="money">
+                    ZMW {{ record.expense_value|floatformat:2|intcomma }}
+                    {% if record.uses_foreign_currency %}
+                        <br>{{ record.currency }} {{ record.expense_value_project_currency|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
+                <td class="money">
+                    ZMW {{ record.profit_value|floatformat:2|intcomma }}
+                    {% if record.uses_foreign_currency %}
+                        <br>{{ record.currency }} {{ record.profit_value_project_currency|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
                 <td class="money">
                     {{ record.currency }} {{ record.paid_value|floatformat:2|intcomma }}
                     {% if record.uses_foreign_currency %}

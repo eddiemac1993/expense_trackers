@@ -384,6 +384,11 @@
 
             <div class="card-value">
                 ZMW {{ project.expense_value|floatformat:2|intcomma }}
+                {% if project.uses_foreign_currency %}
+                    <span class="muted-money">
+                        {{ project.currency }} {{ project.expense_value_project_currency|floatformat:2|intcomma }}
+                    </span>
+                {% endif %}
             </div>
         </div>
 
@@ -394,6 +399,11 @@
 
             <div class="card-value">
                 ZMW {{ project.profit_value|floatformat:2|intcomma }}
+                {% if project.uses_foreign_currency %}
+                    <span class="muted-money">
+                        {{ project.currency }} {{ project.profit_value_project_currency|floatformat:2|intcomma }}
+                    </span>
+                {% endif %}
             </div>
         </div>
 
@@ -486,6 +496,12 @@
                                     ZMW {{ expense.amount_zmw|floatformat:2|intcomma }}
                                 </span>
                             {% endif %}
+                            {% if project.uses_foreign_currency %}
+                                <span class="muted-money">
+                                    {{ project.currency }} equivalent:
+                                    {{ expense.amount_project_currency|floatformat:2|intcomma }}
+                                </span>
+                            {% endif %}
                     </td>
 
                     <td>
@@ -548,6 +564,11 @@
 
                     <td class="money">
                         ZMW {{ project.expense_value|floatformat:2|intcomma }}
+                        {% if project.uses_foreign_currency %}
+                            <span class="muted-money">
+                                {{ project.currency }} {{ project.expense_value_project_currency|floatformat:2|intcomma }}
+                            </span>
+                        {% endif %}
                     </td>
 
                     <td colspan="2">

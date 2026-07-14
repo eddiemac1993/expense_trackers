@@ -90,6 +90,12 @@ class ProjectRecord(models.Model):
     def paid_value_zmw(self):
         return self.paid_value * self.effective_exchange_rate
 
+    def zmw_to_project_currency(self, amount):
+        if self.uses_foreign_currency and self.effective_exchange_rate > 0:
+            return amount / self.effective_exchange_rate
+
+        return amount
+
     @property
     def tax_rate(self):
         if self.tax_type == "TOT":
@@ -121,6 +127,22 @@ class ProjectRecord(models.Model):
     @property
     def profit_value(self):
         return self.contract_excluding_tax - self.expense_value
+
+    @property
+    def expense_value_project_currency(self):
+        return self.zmw_to_project_currency(self.expense_value)
+
+    @property
+    def profit_value_project_currency(self):
+        return self.zmw_to_project_currency(self.profit_value)
+
+    @property
+    def tax_amount_project_currency(self):
+        return self.zmw_to_project_currency(self.tax_amount)
+
+    @property
+    def contract_excluding_tax_project_currency(self):
+        return self.zmw_to_project_currency(self.contract_excluding_tax)
 
     @property
     def pending_payment_value(self):
@@ -250,6 +272,10 @@ class ProjectExpense(models.Model):
     @property
     def amount_zmw(self):
         return self.amount * self.effective_exchange_rate
+
+    @property
+    def amount_project_currency(self):
+        return self.project.zmw_to_project_currency(self.amount_zmw)
 
     def __str__(self):
         return f"{self.project.project_supply} - {self.currency} {self.amount}"
