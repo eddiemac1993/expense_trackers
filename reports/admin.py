@@ -4,6 +4,7 @@ from .models import (
     ExpenseTag,
     PendingProjectRecord,
     ProjectExpense,
+    ProjectPayment,
     ProjectRecord,
 )
 
@@ -16,6 +17,20 @@ class ProjectExpenseInline(admin.TabularInline):
         "date",
         "reason",
         "tag",
+        "amount",
+        "currency",
+        "exchange_rate",
+        "notes",
+    )
+
+
+class ProjectPaymentInline(admin.TabularInline):
+    model = ProjectPayment
+    extra = 1
+
+    fields = (
+        "date",
+        "reference",
         "amount",
         "currency",
         "exchange_rate",
@@ -41,6 +56,7 @@ class ProjectRecordAdmin(admin.ModelAdmin):
         "profit_value",
         "paid_value",
         "paid_value_zmw",
+        "payment_value",
         "pending_payment_value",
         "status",
     )
@@ -66,6 +82,7 @@ class ProjectRecordAdmin(admin.ModelAdmin):
         "contract_excluding_tax",
         "contract_value_zmw",
         "paid_value_zmw",
+        "payment_value",
         "expense_value",
         "profit_value",
         "pending_payment_value",
@@ -102,6 +119,7 @@ class ProjectRecordAdmin(admin.ModelAdmin):
                     "contract_excluding_tax",
                     "paid_value",
                     "paid_value_zmw",
+                    "payment_value",
                     "pending_payment_value",
                     "expense_value",
                     "profit_value",
@@ -121,7 +139,7 @@ class ProjectRecordAdmin(admin.ModelAdmin):
         ),
     )
 
-    inlines = [ProjectExpenseInline]
+    inlines = [ProjectExpenseInline, ProjectPaymentInline]
 
     ordering = (
         "start_date",
@@ -241,6 +259,44 @@ class ProjectExpenseAdmin(admin.ModelAdmin):
 
     search_fields = (
         "reason",
+        "notes",
+        "project__company",
+        "project__project_supply",
+        "project__client",
+    )
+
+    readonly_fields = (
+        "amount_zmw",
+        "created_at",
+    )
+
+    ordering = (
+        "-date",
+        "-created_at",
+    )
+
+
+@admin.register(ProjectPayment)
+class ProjectPaymentAdmin(admin.ModelAdmin):
+    list_display = (
+        "project",
+        "date",
+        "reference",
+        "currency",
+        "exchange_rate",
+        "amount",
+        "amount_zmw",
+        "created_at",
+    )
+
+    list_filter = (
+        "currency",
+        "date",
+        "project__company",
+    )
+
+    search_fields = (
+        "reference",
         "notes",
         "project__company",
         "project__project_supply",

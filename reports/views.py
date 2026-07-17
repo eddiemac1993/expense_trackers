@@ -15,6 +15,7 @@ from .models import (
     ExpenseTag,
     PendingProjectRecord,
     ProjectExpense,
+    ProjectPayment,
     ProjectRecord,
 )
 
@@ -110,7 +111,7 @@ def password_is_valid(request):
 
 
 def get_filtered_records(request, internal=False):
-    records = ProjectRecord.objects.prefetch_related("expenses").filter(
+    records = ProjectRecord.objects.prefetch_related("expenses", "payments").filter(
         is_internal=internal
     )
 
@@ -119,7 +120,6 @@ def get_filtered_records(request, internal=False):
     client = request.GET.get("client", "")
     status = request.GET.get("status", "")
     tax_type = request.GET.get("tax_type", "")
-    payment_status = request.GET.get("payment_status", "")
     start_date = request.GET.get("start_date", "")
     end_date = request.GET.get("end_date", "")
 
@@ -143,21 +143,6 @@ def get_filtered_records(request, internal=False):
 
     if tax_type:
         records = records.filter(tax_type=tax_type)
-
-    if payment_status == "pending":
-        records = records.filter(paid_value__lt=F("contract_value"))
-
-    elif payment_status == "unpaid":
-        records = records.filter(paid_value=0)
-
-    elif payment_status == "partly_paid":
-        records = records.filter(
-            paid_value__gt=0,
-            paid_value__lt=F("contract_value")
-        )
-
-    elif payment_status == "fully_paid":
-        records = records.filter(paid_value__gte=F("contract_value"))
 
     if start_date:
         records = records.filter(start_date__gte=start_date)
@@ -199,6 +184,46 @@ def get_filtered_records(request, internal=False):
 def get_report_context(request, paginate=True, internal=False):
     records = get_filtered_records(request, internal=internal)
     all_record_list = list(records)
+    payment_status = request.GET.get("payment_status", "")
+    selected_sort = request.GET.get("sort", "start_date")
+
+    if payment_status == "pending":
+        all_record_list = [
+            record for record in all_record_list
+            if record.paid_value_zmw < record.contract_value_zmw
+        ]
+
+    elif payment_status == "unpaid":
+        all_record_list = [
+            record for record in all_record_list
+            if record.paid_value_zmw == 0
+        ]
+
+    elif payment_status == "partly_paid":
+        all_record_list = [
+            record for record in all_record_list
+            if 0 < record.paid_value_zmw < record.contract_value_zmw
+        ]
+
+    elif payment_status == "fully_paid":
+        all_record_list = [
+            record for record in all_record_list
+            if record.paid_value_zmw >= record.contract_value_zmw
+        ]
+
+    if selected_sort == "paid":
+        all_record_list = sorted(
+            all_record_list,
+            key=lambda record: record.paid_value_zmw
+        )
+    elif selected_sort == "-paid":
+        all_record_list = sorted(
+            all_record_list,
+            key=lambda record: record.paid_value_zmw,
+            reverse=True
+        )
+
+    records = all_record_list
 
     if internal:
         pending_projects = PendingProjectRecord.objects.none()
@@ -313,7 +338,7 @@ def get_report_context(request, paginate=True, internal=False):
         "selected_payment_status": request.GET.get("payment_status", ""),
         "selected_start_date": request.GET.get("start_date", ""),
         "selected_end_date": request.GET.get("end_date", ""),
-        "selected_sort": request.GET.get("sort", "start_date"),
+        "selected_sort": selected_sort,
 
         "selected_projects": request.GET.getlist("selected_projects"),
 
@@ -690,6 +715,60 @@ def project_expenses(request, project_id):
     )
 
 
+def project_payments(request, project_id):
+    project = get_object_or_404(
+        ProjectRecord,
+        id=project_id
+    )
+
+    if project.is_internal and not request.session.get("internal_project_access"):
+        return redirect("internal_project_login")
+
+    if request.method == "POST":
+        if not request.user.is_staff and not request.session.get("internal_project_access"):
+            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+
+        reference = request.POST.get("reference", "")
+        amount = request.POST.get("amount") or 0
+        currency = clean_currency(request.POST.get("currency") or project.currency)
+        exchange_rate = clean_exchange_rate(
+            request.POST.get("exchange_rate") or project.exchange_rate,
+            currency
+        )
+        notes = request.POST.get("notes", "")
+        date = request.POST.get("date") or None
+
+        project.payments.create(
+            reference=reference,
+            amount=amount,
+            currency=currency,
+            exchange_rate=exchange_rate,
+            notes=notes,
+            date=date,
+        )
+
+        return redirect(
+            "project_payments",
+            project_id=project.id
+        )
+
+    payments = project.payments.all().order_by(
+        "-date",
+        "-created_at"
+    )
+
+    return render(
+        request,
+        "reports/project_payments.html",
+        {
+            "project": project,
+            "payments": payments,
+            "currencies": CURRENCY_CHOICES,
+            "internal_page": project.is_internal,
+        }
+    )
+
+
 def generate_project_report_pdf(request):
     internal = request.GET.get("internal") == "1"
 
@@ -789,5 +868,52 @@ def delete_expense(request, project_id, expense_id):
 
     return redirect(
         "project_expenses",
+        project_id=project.id
+    )
+
+
+@staff_member_required
+def edit_payment(request, project_id, payment_id):
+    project = get_object_or_404(ProjectRecord, id=project_id)
+
+    payment = get_object_or_404(
+        ProjectPayment,
+        id=payment_id,
+        project=project
+    )
+
+    if request.method == "POST":
+        payment.reference = request.POST.get("reference", "")
+        payment.amount = request.POST.get("amount") or 0
+        payment.currency = clean_currency(request.POST.get("currency"))
+        payment.exchange_rate = clean_exchange_rate(
+            request.POST.get("exchange_rate"),
+            payment.currency
+        )
+        payment.notes = request.POST.get("notes", "")
+        payment.date = request.POST.get("date") or None
+        payment.save()
+
+    return redirect(
+        "project_payments",
+        project_id=project.id
+    )
+
+
+@staff_member_required
+@require_POST
+def delete_payment(request, project_id, payment_id):
+    project = get_object_or_404(ProjectRecord, id=project_id)
+
+    payment = get_object_or_404(
+        ProjectPayment,
+        id=payment_id,
+        project=project
+    )
+
+    payment.delete()
+
+    return redirect(
+        "project_payments",
         project_id=project.id
     )

@@ -279,9 +279,9 @@
                     {% endif %}
                 </td>
                 <td class="money">
-                    {{ record.currency }} {{ record.paid_value|floatformat:2|intcomma }}
+                    ZMW {{ record.paid_value_zmw|floatformat:2|intcomma }}
                     {% if record.uses_foreign_currency %}
-                        <br>ZMW {{ record.paid_value_zmw|floatformat:2|intcomma }}
+                        <br>{{ record.currency }} {{ record.paid_value_project_currency|floatformat:2|intcomma }}
                     {% endif %}
                 </td>
                 <td class="pending-money">ZMW {{ record.pending_payment_value|floatformat:2|intcomma }}</td>

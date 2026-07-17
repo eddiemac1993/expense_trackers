@@ -61,6 +61,18 @@ urlpatterns = [
     ),
 
     path(
+        "project-report/<int:project_id>/payments/<int:payment_id>/edit/",
+        views.edit_payment,
+        name="edit_payment"
+    ),
+
+    path(
+        "project-report/<int:project_id>/payments/<int:payment_id>/delete/",
+        views.delete_payment,
+        name="delete_payment"
+    ),
+
+    path(
         "project/<int:project_id>/delete/",
         views.delete_project_report,
         name="delete_project_report"
@@ -70,6 +82,12 @@ urlpatterns = [
         "project/<int:project_id>/expenses/",
         views.project_expenses,
         name="project_expenses"
+    ),
+
+    path(
+        "project/<int:project_id>/payments/",
+        views.project_payments,
+        name="project_payments"
     ),
 
     path(

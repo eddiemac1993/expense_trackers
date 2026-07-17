@@ -88,7 +88,8 @@ class ProjectRecord(models.Model):
 
     @property
     def paid_value_zmw(self):
-        return self.paid_value * self.effective_exchange_rate
+        opening_paid = self.paid_value * self.effective_exchange_rate
+        return opening_paid + self.payment_value
 
     def zmw_to_project_currency(self, amount):
         if self.uses_foreign_currency and self.effective_exchange_rate > 0:
@@ -123,6 +124,17 @@ class ProjectRecord(models.Model):
             (expense.amount_zmw for expense in self.expenses.all()),
             Decimal("0.00")
         )
+
+    @property
+    def payment_value(self):
+        return sum(
+            (payment.amount_zmw for payment in self.payments.all()),
+            Decimal("0.00")
+        )
+
+    @property
+    def paid_value_project_currency(self):
+        return self.zmw_to_project_currency(self.paid_value_zmw)
 
     @property
     def profit_value(self):
@@ -256,6 +268,50 @@ class ProjectExpense(models.Model):
 
     notes = models.TextField(blank=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date", "-created_at"]
+
+    @property
+    def effective_exchange_rate(self):
+        return exchange_rate_for_zmw(self.currency, self.exchange_rate)
+
+    @property
+    def uses_foreign_currency(self):
+        return self.currency != "ZMW"
+
+    @property
+    def amount_zmw(self):
+        return self.amount * self.effective_exchange_rate
+
+    @property
+    def amount_project_currency(self):
+        return self.project.zmw_to_project_currency(self.amount_zmw)
+
+    def __str__(self):
+        return f"{self.project.project_supply} - {self.currency} {self.amount}"
+
+
+class ProjectPayment(models.Model):
+    project = models.ForeignKey(
+        ProjectRecord,
+        on_delete=models.CASCADE,
+        related_name="payments"
+    )
+
+    date = models.DateField()
+    reference = models.CharField(max_length=255, blank=True)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default="ZMW")
+    exchange_rate = models.DecimalField(
+        "Exchange rate to ZMW",
+        max_digits=12,
+        decimal_places=4,
+        default=1,
+        help_text="Use the ZMW value for 1 USD. Leave as 1 for ZMW payments.",
+    )
+    notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

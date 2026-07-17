@@ -673,8 +673,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Paid</label>
+                    <label>Opening Paid</label>
                     <input type="number" step="0.01" name="paid_value" value="{{ editing_project.paid_value|default:'' }}">
+                    <small>Use this for old payments already received, then add new payments from the Payments page.</small>
                 </div>
 
                 <div class="form-group">
@@ -1113,10 +1114,12 @@
                         </td>
 
                         <td class="money">
-                            {{ record.currency }} {{ record.paid_value|floatformat:2|intcomma }}
+                            <a class="expense-link" href="{% url 'project_payments' record.id %}">
+                                ZMW {{ record.paid_value_zmw|floatformat:2|intcomma }}
+                            </a>
                             {% if record.uses_foreign_currency %}
                                 <div class="muted-money">
-                                    ZMW {{ record.paid_value_zmw|floatformat:2|intcomma }}
+                                    {{ record.currency }} {{ record.paid_value_project_currency|floatformat:2|intcomma }}
                                 </div>
                             {% endif %}
                         </td>
@@ -1153,6 +1156,10 @@
 
                                     <a href="{% url 'project_expenses' record.id %}" class="btn expense-btn">
                                         Expenses
+                                    </a>
+
+                                    <a href="{% url 'project_payments' record.id %}" class="btn expense-btn">
+                                        Payments
                                     </a>
 
                                     {% if internal_page %}
