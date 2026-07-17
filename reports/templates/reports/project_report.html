@@ -1335,6 +1335,7 @@
                 <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Expense</th>
                 <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Tax</th>
                 <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Profit</th>
+                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Balance</th>
             </tr>
         </thead>
 
@@ -1364,10 +1365,16 @@
                         <br>{{ record.currency }} {{ record.profit_value_project_currency|floatformat:2|intcomma }}
                     {% endif %}
                 </td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">
+                    ZMW {{ record.pending_payment_value|floatformat:2|intcomma }}
+                    {% if record.uses_foreign_currency %}
+                        <br>{{ record.currency }} {{ record.pending_payment_project_currency|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" style="border:1px solid #111; padding:18px; text-align:center;">
+                <td colspan="9" style="border:1px solid #111; padding:18px; text-align:center;">
                     No projects available for the current filters.
                 </td>
             </tr>
@@ -1379,6 +1386,7 @@
                 <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ total_expense|floatformat:2|intcomma }}</td>
                 <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ total_tax|floatformat:2|intcomma }}</td>
                 <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ total_profit|floatformat:2|intcomma }}</td>
+                <td style="border:1px solid #111; padding:8px; text-align:right;">ZMW {{ total_pending|floatformat:2|intcomma }}</td>
             </tr>
         </tbody>
     </table>

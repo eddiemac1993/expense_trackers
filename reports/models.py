@@ -161,6 +161,10 @@ class ProjectRecord(models.Model):
         return self.contract_value_zmw - self.paid_value_zmw
 
     @property
+    def pending_payment_project_currency(self):
+        return self.zmw_to_project_currency(self.pending_payment_value)
+
+    @property
     def balance_value(self):
         return self.pending_payment_value
 
