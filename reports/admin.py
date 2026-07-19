@@ -32,8 +32,11 @@ class ProjectPaymentInline(admin.TabularInline):
         "date",
         "reference",
         "amount",
+        "tax_rate",
         "currency",
         "exchange_rate",
+        "tax_amount_zmw",
+        "net_amount_zmw",
         "notes",
     )
 
@@ -285,7 +288,10 @@ class ProjectPaymentAdmin(admin.ModelAdmin):
         "currency",
         "exchange_rate",
         "amount",
+        "tax_rate",
         "amount_zmw",
+        "tax_amount_zmw",
+        "net_amount_zmw",
         "created_at",
     )
 
@@ -305,6 +311,8 @@ class ProjectPaymentAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         "amount_zmw",
+        "tax_amount_zmw",
+        "net_amount_zmw",
         "created_at",
     )
 

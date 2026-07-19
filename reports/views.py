@@ -17,6 +17,7 @@ from .models import (
     ProjectExpense,
     ProjectPayment,
     ProjectRecord,
+    money_round,
 )
 
 
@@ -103,6 +104,121 @@ def clean_exchange_rate(value, currency):
         return Decimal("1.00")
 
     return rate
+
+
+def clean_money(value):
+    try:
+        return money_round(Decimal(value or "0"))
+    except (InvalidOperation, TypeError):
+        return Decimal("0.00")
+
+
+def payment_amount_zmw(amount, currency, exchange_rate):
+    return money_round(amount * clean_exchange_rate(exchange_rate, currency))
+
+
+def build_payment_rows(project, payments):
+    rows = []
+    cumulative_gross = money_round(project.paid_value_zmw - project.payment_value)
+    cumulative_tax = Decimal("0.00")
+    cumulative_net = cumulative_gross
+
+    for number, payment in enumerate(payments, start=1):
+        cumulative_gross += payment.amount_zmw
+        cumulative_tax += payment.tax_amount_zmw
+        cumulative_net += payment.net_amount_zmw
+
+        rows.append({
+            "number": number,
+            "payment": payment,
+            "cumulative_gross": cumulative_gross,
+            "cumulative_tax": cumulative_tax,
+            "cumulative_net": cumulative_net,
+            "remaining_balance": project.contract_value_zmw - cumulative_gross,
+        })
+
+    return rows
+
+
+def render_project_payments(
+    request,
+    project,
+    error_message=None,
+    submitted_payment=None,
+):
+    payments = list(project.payments.all().order_by("date", "created_at"))
+
+    return render(
+        request,
+        "reports/project_payments.html",
+        {
+            "project": project,
+            "payments": payments,
+            "payment_rows": build_payment_rows(project, payments),
+            "currencies": CURRENCY_CHOICES,
+            "error_message": error_message,
+            "submitted_payment": submitted_payment or {},
+            "internal_page": project.is_internal,
+        }
+    )
+
+
+def validate_payment_data(
+    request,
+    project,
+    existing_payment=None,
+):
+    reference = request.POST.get("reference", "")
+    amount = clean_money(request.POST.get("amount"))
+    currency = clean_currency(request.POST.get("currency") or project.currency)
+    exchange_rate = clean_exchange_rate(
+        request.POST.get("exchange_rate") or project.exchange_rate,
+        currency
+    )
+    notes = request.POST.get("notes", "")
+    date = request.POST.get("date") or None
+    allow_overpayment = request.POST.get("allow_overpayment") == "1"
+    gross_zmw = payment_amount_zmw(amount, currency, exchange_rate)
+
+    submitted_payment = {
+        "reference": reference,
+        "amount": request.POST.get("amount", ""),
+        "currency": currency,
+        "exchange_rate": exchange_rate,
+        "notes": notes,
+        "date": date,
+        "allow_overpayment": allow_overpayment,
+    }
+
+    if not date:
+        return None, "Payment cannot be saved without a date.", submitted_payment
+
+    if amount <= 0:
+        return None, "Payment amount must be greater than zero.", submitted_payment
+
+    existing_total = project.paid_value_zmw
+
+    if existing_payment:
+        existing_total -= existing_payment.amount_zmw
+
+    new_total = existing_total + gross_zmw
+
+    if new_total > project.contract_value_zmw and not allow_overpayment:
+        return (
+            None,
+            "This payment will make total paid exceed the contract value. Tick allow overpayment to save it.",
+            submitted_payment
+        )
+
+    return {
+        "reference": reference,
+        "amount": amount,
+        "currency": currency,
+        "exchange_rate": exchange_rate,
+        "tax_rate": project.tax_rate,
+        "notes": notes,
+        "date": date,
+    }, None, submitted_payment
 
 
 def password_is_valid(request):
@@ -241,6 +357,9 @@ def get_report_context(request, paginate=True, internal=False):
     total_profit = total_net_contract - total_expense
     total_paid = sum(record.paid_value_zmw for record in all_record_list)
     total_pending = total_contract - total_paid
+    total_final_expected_profit = sum(
+        record.final_expected_profit_value for record in all_record_list
+    )
 
     company_chart = {}
 
@@ -349,6 +468,7 @@ def get_report_context(request, paginate=True, internal=False):
         "total_profit": total_profit,
         "total_paid": total_paid,
         "total_pending": total_pending,
+        "total_final_expected_profit": total_final_expected_profit,
 
         "internal_page": internal,
     }
@@ -388,6 +508,21 @@ def project_report(request, project_id=None):
 
         if editing_project:
             project = editing_project
+            tax_type_changed = project.tax_type != tax_type
+
+            if (
+                tax_type_changed
+                and project.payments.exists()
+                and request.POST.get("confirm_tax_recalculate") != "1"
+            ):
+                context = get_report_context(request, internal=False)
+                context["editing_project"] = editing_project
+                context["tax_recalculate_warning"] = True
+                return render(
+                    request,
+                    "reports/project_report.html",
+                    context
+                )
         else:
             project, created = ProjectRecord.objects.get_or_create(
                 company=company,
@@ -422,6 +557,13 @@ def project_report(request, project_id=None):
         project.end_date = end_date
         project.is_internal = False
         project.save()
+
+        if (
+            editing_project
+            and tax_type_changed
+            and request.POST.get("confirm_tax_recalculate") == "1"
+        ):
+            project.payments.update(tax_rate=project.tax_rate)
 
         return redirect("project_report")
 
@@ -496,8 +638,25 @@ def internal_project_report(request, project_id=None):
 
         if editing_project:
             project = editing_project
+            tax_type_changed = project.tax_type != tax_type
+
+            if (
+                tax_type_changed
+                and project.payments.exists()
+                and request.POST.get("confirm_tax_recalculate") != "1"
+            ):
+                context = get_report_context(request, internal=True)
+                context["editing_project"] = editing_project
+                context["internal_page"] = True
+                context["tax_recalculate_warning"] = True
+                return render(
+                    request,
+                    "reports/project_report.html",
+                    context
+                )
         else:
             project = ProjectRecord()
+            tax_type_changed = False
 
         project.company = company
         project.project_supply = project_supply
@@ -512,6 +671,13 @@ def internal_project_report(request, project_id=None):
         project.end_date = end_date
         project.is_internal = True
         project.save()
+
+        if (
+            editing_project
+            and tax_type_changed
+            and request.POST.get("confirm_tax_recalculate") == "1"
+        ):
+            project.payments.update(tax_rate=project.tax_rate)
 
         return redirect("internal_project_report")
 
@@ -728,23 +894,21 @@ def project_payments(request, project_id):
         if not request.user.is_staff and not request.session.get("internal_project_access"):
             return redirect(f"{settings.LOGIN_URL}?next={request.path}")
 
-        reference = request.POST.get("reference", "")
-        amount = request.POST.get("amount") or 0
-        currency = clean_currency(request.POST.get("currency") or project.currency)
-        exchange_rate = clean_exchange_rate(
-            request.POST.get("exchange_rate") or project.exchange_rate,
-            currency
+        payment_data, error_message, submitted_payment = validate_payment_data(
+            request,
+            project
         )
-        notes = request.POST.get("notes", "")
-        date = request.POST.get("date") or None
+
+        if error_message:
+            return render_project_payments(
+                request,
+                project,
+                error_message=error_message,
+                submitted_payment=submitted_payment
+            )
 
         project.payments.create(
-            reference=reference,
-            amount=amount,
-            currency=currency,
-            exchange_rate=exchange_rate,
-            notes=notes,
-            date=date,
+            **payment_data
         )
 
         return redirect(
@@ -752,21 +916,7 @@ def project_payments(request, project_id):
             project_id=project.id
         )
 
-    payments = project.payments.all().order_by(
-        "-date",
-        "-created_at"
-    )
-
-    return render(
-        request,
-        "reports/project_payments.html",
-        {
-            "project": project,
-            "payments": payments,
-            "currencies": CURRENCY_CHOICES,
-            "internal_page": project.is_internal,
-        }
-    )
+    return render_project_payments(request, project)
 
 
 def generate_project_report_pdf(request):
@@ -883,15 +1033,27 @@ def edit_payment(request, project_id, payment_id):
     )
 
     if request.method == "POST":
-        payment.reference = request.POST.get("reference", "")
-        payment.amount = request.POST.get("amount") or 0
-        payment.currency = clean_currency(request.POST.get("currency"))
-        payment.exchange_rate = clean_exchange_rate(
-            request.POST.get("exchange_rate"),
-            payment.currency
+        payment_data, error_message, submitted_payment = validate_payment_data(
+            request,
+            project,
+            existing_payment=payment
         )
-        payment.notes = request.POST.get("notes", "")
-        payment.date = request.POST.get("date") or None
+
+        if error_message:
+            return render_project_payments(
+                request,
+                project,
+                error_message=error_message,
+                submitted_payment=submitted_payment
+            )
+
+        payment.reference = payment_data["reference"]
+        payment.amount = payment_data["amount"]
+        payment.currency = payment_data["currency"]
+        payment.exchange_rate = payment_data["exchange_rate"]
+        payment.tax_rate = payment_data["tax_rate"]
+        payment.notes = payment_data["notes"]
+        payment.date = payment_data["date"]
         payment.save()
 
     return redirect(

@@ -157,7 +157,7 @@
         table{
             width:100%;
             border-collapse:collapse;
-            min-width:1050px;
+            min-width:1700px;
         }
 
         th{
@@ -218,6 +218,16 @@
             text-align:center;
             padding:30px;
         }
+
+        .alert{
+            background:#fee2e2;
+            border:1px solid #fca5a5;
+            color:#991b1b;
+            border-radius:10px;
+            padding:12px 14px;
+            margin-bottom:18px;
+            font-weight:bold;
+        }
     </style>
 </head>
 
@@ -245,25 +255,35 @@
     <div class="form-box">
         <h2 class="form-title">Add New Payment</h2>
 
+        {% if error_message %}
+            <div class="alert">{{ error_message }}</div>
+        {% endif %}
+
         <form method="post">
             {% csrf_token %}
 
             <div class="form-grid">
                 <div class="form-group">
                     <label>Reference / Receipt No.</label>
-                    <input type="text" name="reference">
+                    <input type="text" name="reference" value="{{ submitted_payment.reference|default:'' }}">
                 </div>
 
                 <div class="form-group">
                     <label>Amount</label>
-                    <input type="number" step="0.01" name="amount" required>
+                    <input type="number" step="0.01" name="amount" required value="{{ submitted_payment.amount|default:'' }}">
                 </div>
 
                 <div class="form-group">
                     <label>Currency</label>
                     <select name="currency">
                         {% for value, label in currencies %}
-                            <option value="{{ value }}" {% if project.currency == value %}selected{% endif %}>
+                            <option value="{{ value }}"
+                                {% if submitted_payment.currency == value %}
+                                    selected
+                                {% elif not submitted_payment.currency and project.currency == value %}
+                                    selected
+                                {% endif %}
+                            >
                                 {{ label }}
                             </option>
                         {% endfor %}
@@ -277,20 +297,33 @@
                         step="0.0001"
                         min="0"
                         name="exchange_rate"
-                        value="{{ project.exchange_rate|default:'1' }}"
+                        value="{{ submitted_payment.exchange_rate|default:project.exchange_rate|default:'1' }}"
                     >
                     <small>For USD, enter how many ZMW equals 1 USD.</small>
                 </div>
 
                 <div class="form-group">
                     <label>Date</label>
-                    <input type="date" name="date" required>
+                    <input type="date" name="date" required value="{{ submitted_payment.date|default:'' }}">
                 </div>
             </div>
 
             <div class="form-group" style="margin-top:15px;">
+                <label>
+                    <input
+                        type="checkbox"
+                        name="allow_overpayment"
+                        value="1"
+                        {% if submitted_payment.allow_overpayment %}checked{% endif %}
+                        style="width:auto; margin-right:6px;"
+                    >
+                    Allow this payment to exceed the contract value
+                </label>
+            </div>
+
+            <div class="form-group" style="margin-top:15px;">
                 <label>Notes</label>
-                <textarea name="notes" rows="3"></textarea>
+                <textarea name="notes" rows="3">{{ submitted_payment.notes|default:'' }}</textarea>
             </div>
 
             <button type="submit" class="btn" style="margin-top:15px;">
@@ -325,9 +358,44 @@
         </div>
 
         <div class="card">
+            <div class="card-title">Tax on Payments</div>
+            <div class="card-value">
+                ZMW {{ project.tax_amount|floatformat:2|intcomma }}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Net Received</div>
+            <div class="card-value">
+                ZMW {{ project.net_received_value|floatformat:2|intcomma }}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Total Expenses</div>
+            <div class="card-value">
+                ZMW {{ project.expense_value|floatformat:2|intcomma }}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Current Profit</div>
+            <div class="card-value">
+                ZMW {{ project.profit_value|floatformat:2|intcomma }}
+            </div>
+        </div>
+
+        <div class="card">
             <div class="card-title">Pending Balance</div>
             <div class="card-value">
                 ZMW {{ project.pending_payment_value|floatformat:2|intcomma }}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Final Expected Profit</div>
+            <div class="card-value">
+                ZMW {{ project.final_expected_profit_value|floatformat:2|intcomma }}
             </div>
         </div>
     </div>
@@ -336,17 +404,30 @@
         <table>
             <thead>
                 <tr>
+                    <th>Payment #</th>
                     <th>Date</th>
                     <th>Reference</th>
-                    <th>Amount</th>
+                    <th>Gross Payment</th>
+                    <th>Tax Rate</th>
+                    <th>Tax Amount</th>
+                    <th>Net Payment</th>
+                    <th>Cumulative Gross</th>
+                    <th>Cumulative Tax</th>
+                    <th>Cumulative Net</th>
+                    <th>Remaining Balance</th>
                     <th>Notes</th>
                     <th>Actions</th>
                 </tr>
             </thead>
 
             <tbody>
-                {% for payment in payments %}
+                {% for row in payment_rows %}
+                {% with payment=row.payment %}
                 <tr>
+                    <td class="money">
+                        {{ row.number }}
+                    </td>
+
                     <td>
                         <form
                             method="post"
@@ -408,6 +489,43 @@
                                     {{ payment.amount_project_currency|floatformat:2|intcomma }}
                                 </span>
                             {% endif %}
+                            <label class="muted-money">
+                                <input
+                                    type="checkbox"
+                                    name="allow_overpayment"
+                                    value="1"
+                                    style="width:auto; margin-right:4px;"
+                                >
+                                Allow overpayment
+                            </label>
+                    </td>
+
+                    <td class="money">
+                        {{ payment.tax_rate_percent|floatformat:2 }}%
+                    </td>
+
+                    <td class="money">
+                        ZMW {{ payment.tax_amount_zmw|floatformat:2|intcomma }}
+                    </td>
+
+                    <td class="money">
+                        ZMW {{ payment.net_amount_zmw|floatformat:2|intcomma }}
+                    </td>
+
+                    <td class="money">
+                        ZMW {{ row.cumulative_gross|floatformat:2|intcomma }}
+                    </td>
+
+                    <td class="money">
+                        ZMW {{ row.cumulative_tax|floatformat:2|intcomma }}
+                    </td>
+
+                    <td class="money">
+                        ZMW {{ row.cumulative_net|floatformat:2|intcomma }}
+                    </td>
+
+                    <td class="money">
+                        ZMW {{ row.remaining_balance|floatformat:2|intcomma }}
                     </td>
 
                     <td>
@@ -443,16 +561,17 @@
                         </div>
                     </td>
                 </tr>
+                {% endwith %}
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="empty">
+                    <td colspan="13" class="empty">
                         No payments added for this project yet.
                     </td>
                 </tr>
                 {% endfor %}
 
                 <tr class="totals-row">
-                    <td colspan="2">TOTAL PAID</td>
+                    <td colspan="3">TOTALS</td>
                     <td class="money">
                         ZMW {{ project.paid_value_zmw|floatformat:2|intcomma }}
                         {% if project.uses_foreign_currency %}
@@ -461,6 +580,13 @@
                             </span>
                         {% endif %}
                     </td>
+                    <td>-</td>
+                    <td>ZMW {{ project.tax_amount|floatformat:2|intcomma }}</td>
+                    <td>ZMW {{ project.net_received_value|floatformat:2|intcomma }}</td>
+                    <td>ZMW {{ project.paid_value_zmw|floatformat:2|intcomma }}</td>
+                    <td>ZMW {{ project.tax_amount|floatformat:2|intcomma }}</td>
+                    <td>ZMW {{ project.net_received_value|floatformat:2|intcomma }}</td>
+                    <td>ZMW {{ project.pending_payment_value|floatformat:2|intcomma }}</td>
                     <td colspan="2">-</td>
                 </tr>
             </tbody>

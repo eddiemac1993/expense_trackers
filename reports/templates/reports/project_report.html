@@ -216,6 +216,16 @@
             line-height:1.35;
         }
 
+        .alert{
+            background:#fee2e2;
+            border:1px solid #fca5a5;
+            color:#991b1b;
+            border-radius:10px;
+            padding:12px 14px;
+            margin-bottom:18px;
+            font-weight:bold;
+        }
+
         .form-actions,
         .filter-actions{
             display:flex;
@@ -569,12 +579,12 @@
         </div>
 
         <div class="card net-card">
-            <div class="card-title">Total Net Contract</div>
+            <div class="card-title">Total Net Received</div>
             <div class="card-value">ZMW {{ total_net_contract|floatformat:2|intcomma }}</div>
         </div>
 
         <div class="card tax-card">
-            <div class="card-title">Total Tax</div>
+            <div class="card-title">Tax on Payments</div>
             <div class="card-value">ZMW {{ total_tax|floatformat:2|intcomma }}</div>
         </div>
 
@@ -584,8 +594,13 @@
         </div>
 
         <div class="card">
-            <div class="card-title">Total Profit</div>
+            <div class="card-title">Current Profit</div>
             <div class="card-value">ZMW {{ total_profit|floatformat:2|intcomma }}</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Final Expected Profit</div>
+            <div class="card-value">ZMW {{ total_final_expected_profit|floatformat:2|intcomma }}</div>
         </div>
 
         <div class="card">
@@ -633,6 +648,12 @@
 
         <form method="post">
             {% csrf_token %}
+
+            {% if tax_recalculate_warning %}
+                <div class="alert">
+                    Tax type changed. Tick the confirmation box below to recalculate tax on existing payments, then save again.
+                </div>
+            {% endif %}
 
             <div class="form-grid">
 
@@ -815,6 +836,17 @@
                             </option>
                         {% endfor %}
                     </select>
+                    {% if editing_project %}
+                        <label style="margin-top:10px; font-weight:normal;">
+                            <input
+                                type="checkbox"
+                                name="confirm_tax_recalculate"
+                                value="1"
+                                style="width:auto; margin-right:6px;"
+                            >
+                            Confirm recalculation of existing payment taxes if this tax type changes
+                        </label>
+                    {% endif %}
                 </div>
 
                 <div class="form-group">
@@ -1028,10 +1060,10 @@
                         <th>End</th>
                         <th>Contract</th>
                         <th>Tax Type</th>
-                        <th>Tax</th>
-                        <th>Net</th>
+                        <th>Tax Paid</th>
+                        <th>Net Received</th>
                         <th>Expenses</th>
-                        <th>Profit</th>
+                        <th>Current Profit</th>
                         <th>Paid</th>
                         <th>Pending</th>
                         <th>Status</th>
@@ -1333,8 +1365,8 @@
                 <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Client</th>
                 <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Value</th>
                 <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Expense</th>
-                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Tax</th>
-                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Profit</th>
+                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Tax Paid</th>
+                <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Current Profit</th>
                 <th style="border:1px solid #111; padding:8px; background:#111827; color:white;">Balance</th>
             </tr>
         </thead>

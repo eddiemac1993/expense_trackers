@@ -183,12 +183,12 @@
             </td>
 
             <td>
-                <div class="summary-title">Net Contract</div>
+                <div class="summary-title">Net Received</div>
                 <div class="summary-value net-money">ZMW {{ total_net_contract|floatformat:2|intcomma }}</div>
             </td>
 
             <td>
-                <div class="summary-title">Total Tax</div>
+                <div class="summary-title">Tax on Payments</div>
                 <div class="summary-value tax-money">ZMW {{ total_tax|floatformat:2|intcomma }}</div>
             </td>
 
@@ -198,7 +198,7 @@
             </td>
 
             <td>
-                <div class="summary-title">Profit</div>
+                <div class="summary-title">Current Profit</div>
                 <div class="summary-value">ZMW {{ total_profit|floatformat:2|intcomma }}</div>
             </td>
 
@@ -228,10 +228,10 @@
                 <th class="col-date">End</th>
                 <th class="col-money">Contract</th>
                 <th class="col-tax">Tax Type</th>
-                <th class="col-money">Tax</th>
-                <th class="col-money">Net</th>
+                <th class="col-money">Tax Paid</th>
+                <th class="col-money">Net Received</th>
                 <th class="col-money">Expenses</th>
-                <th class="col-money">Profit</th>
+                <th class="col-money">Current Profit</th>
                 <th class="col-money">Paid</th>
                 <th class="col-money">Pending</th>
                 <th class="col-status">Status</th>

@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import models
 
@@ -7,6 +7,15 @@ CURRENCY_CHOICES = [
     ("ZMW", "ZMW"),
     ("USD", "USD"),
 ]
+
+MONEY_QUANT = Decimal("0.01")
+
+
+def money_round(amount):
+    return (amount or Decimal("0.00")).quantize(
+        MONEY_QUANT,
+        rounding=ROUND_HALF_UP
+    )
 
 
 def exchange_rate_for_zmw(currency, exchange_rate):
@@ -108,15 +117,16 @@ class ProjectRecord(models.Model):
         return Decimal("0.00")
 
     @property
-    def contract_excluding_tax(self):
-        if self.tax_rate > 0:
-            return self.contract_value_zmw / (Decimal("1.00") + self.tax_rate)
-
-        return self.contract_value_zmw
+    def tax_rate_percent(self):
+        return self.tax_rate * Decimal("100")
 
     @property
     def tax_amount(self):
-        return self.contract_value_zmw - self.contract_excluding_tax
+        return self.payment_tax_value
+
+    @property
+    def contract_excluding_tax(self):
+        return self.net_received_value
 
     @property
     def expense_value(self):
@@ -133,12 +143,35 @@ class ProjectRecord(models.Model):
         )
 
     @property
+    def payment_tax_value(self):
+        return sum(
+            (payment.tax_amount_zmw for payment in self.payments.all()),
+            Decimal("0.00")
+        )
+
+    @property
+    def net_received_value(self):
+        return self.paid_value_zmw - self.payment_tax_value
+
+    @property
+    def final_expected_tax_value(self):
+        return money_round(self.contract_value_zmw * self.tax_rate)
+
+    @property
+    def final_expected_profit_value(self):
+        return (
+            self.contract_value_zmw
+            - self.final_expected_tax_value
+            - self.expense_value
+        )
+
+    @property
     def paid_value_project_currency(self):
         return self.zmw_to_project_currency(self.paid_value_zmw)
 
     @property
     def profit_value(self):
-        return self.contract_excluding_tax - self.expense_value
+        return self.net_received_value - self.expense_value
 
     @property
     def expense_value_project_currency(self):
@@ -155,6 +188,14 @@ class ProjectRecord(models.Model):
     @property
     def contract_excluding_tax_project_currency(self):
         return self.zmw_to_project_currency(self.contract_excluding_tax)
+
+    @property
+    def net_received_project_currency(self):
+        return self.zmw_to_project_currency(self.net_received_value)
+
+    @property
+    def final_expected_profit_project_currency(self):
+        return self.zmw_to_project_currency(self.final_expected_profit_value)
 
     @property
     def pending_payment_value(self):
@@ -287,7 +328,7 @@ class ProjectExpense(models.Model):
 
     @property
     def amount_zmw(self):
-        return self.amount * self.effective_exchange_rate
+        return money_round(self.amount * self.effective_exchange_rate)
 
     @property
     def amount_project_currency(self):
@@ -307,6 +348,7 @@ class ProjectPayment(models.Model):
     date = models.DateField()
     reference = models.CharField(max_length=255, blank=True)
     amount = models.DecimalField(max_digits=15, decimal_places=2)
+    tax_rate = models.DecimalField(max_digits=6, decimal_places=4, default=0)
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default="ZMW")
     exchange_rate = models.DecimalField(
         "Exchange rate to ZMW",
@@ -331,11 +373,37 @@ class ProjectPayment(models.Model):
 
     @property
     def amount_zmw(self):
-        return self.amount * self.effective_exchange_rate
+        return money_round(self.amount * self.effective_exchange_rate)
+
+    @property
+    def tax_amount_zmw(self):
+        return money_round(self.amount_zmw * self.tax_rate)
+
+    @property
+    def tax_rate_percent(self):
+        return self.tax_rate * Decimal("100")
+
+    @property
+    def net_amount_zmw(self):
+        return self.amount_zmw - self.tax_amount_zmw
 
     @property
     def amount_project_currency(self):
         return self.project.zmw_to_project_currency(self.amount_zmw)
+
+    @property
+    def tax_amount_project_currency(self):
+        return self.project.zmw_to_project_currency(self.tax_amount_zmw)
+
+    @property
+    def net_amount_project_currency(self):
+        return self.project.zmw_to_project_currency(self.net_amount_zmw)
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and not self.tax_rate and self.project_id:
+            self.tax_rate = self.project.tax_rate
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.project.project_supply} - {self.currency} {self.amount}"
