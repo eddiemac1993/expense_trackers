@@ -2,7 +2,6 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.conf import settings
-from django.core.paginator import Paginator
 from django.db.models import F, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -423,19 +422,12 @@ def get_report_context(request, paginate=True, internal=False):
         .order_by("client")
     )
 
-    page_obj = None
-
-    if paginate:
-        paginator = Paginator(records, 25)
-        page_obj = paginator.get_page(request.GET.get("page"))
-        records = page_obj.object_list
-
     query_params = request.GET.copy()
     query_params.pop("page", None)
 
     return {
         "records": records,
-        "page_obj": page_obj,
+        "page_obj": None,
         "result_count": len(all_record_list),
         "filter_querystring": query_params.urlencode(),
         "report_chart_data": report_chart_data,
