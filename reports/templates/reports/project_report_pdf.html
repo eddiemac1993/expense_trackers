@@ -203,6 +203,11 @@
             </td>
 
             <td>
+                <div class="summary-title">Expected Profit</div>
+                <div class="summary-value">ZMW {{ total_final_expected_profit|floatformat:2|intcomma }}</div>
+            </td>
+
+            <td>
                 <div class="summary-title">Paid</div>
                 <div class="summary-value">ZMW {{ total_paid|floatformat:2|intcomma }}</div>
             </td>
@@ -232,6 +237,7 @@
                 <th class="col-money">Net Received</th>
                 <th class="col-money">Expenses</th>
                 <th class="col-money">Current Profit</th>
+                <th class="col-money">Expected Profit</th>
                 <th class="col-money">Paid</th>
                 <th class="col-money">Pending</th>
                 <th class="col-status">Status</th>
@@ -279,6 +285,12 @@
                     {% endif %}
                 </td>
                 <td class="money">
+                    ZMW {{ record.final_expected_profit_value|floatformat:2|intcomma }}
+                    {% if record.uses_foreign_currency %}
+                        <br>{{ record.currency }} {{ record.final_expected_profit_project_currency|floatformat:2|intcomma }}
+                    {% endif %}
+                </td>
+                <td class="money">
                     ZMW {{ record.paid_value_zmw|floatformat:2|intcomma }}
                     {% if record.uses_foreign_currency %}
                         <br>{{ record.currency }} {{ record.paid_value_project_currency|floatformat:2|intcomma }}
@@ -300,7 +312,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="14" style="text-align:center; padding:15px;">
+                <td colspan="15" style="text-align:center; padding:15px;">
                     No awarded projects available.
                 </td>
             </tr>
@@ -314,6 +326,7 @@
                 <td>ZMW {{ total_net_contract|floatformat:2|intcomma }}</td>
                 <td>ZMW {{ total_expense|floatformat:2|intcomma }}</td>
                 <td>ZMW {{ total_profit|floatformat:2|intcomma }}</td>
+                <td>ZMW {{ total_final_expected_profit|floatformat:2|intcomma }}</td>
                 <td>ZMW {{ total_paid|floatformat:2|intcomma }}</td>
                 <td>ZMW {{ total_pending|floatformat:2|intcomma }}</td>
                 <td>-</td>
