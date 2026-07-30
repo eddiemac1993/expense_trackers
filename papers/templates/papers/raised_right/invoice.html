@@ -246,15 +246,7 @@
                 <td width="55%" style="padding-right: 40px;">
                     <div class="section-header">Banking Information</div>
                     <div style="font-size: 10px; color: #333; background: #fdfdfd; padding: 10px; border: 1px solid #eee;">
-                        {% if entry.company.bank_details %}
-                            {{ entry.company.bank_details|linebreaksbr }}
-                        {% else %}
-                            <span class="bold">Bank Name:</span> First Capital Bank | Kamwala<br>
-                            <span class="bold">Account Name:</span> RAISED RIGHT INVESTMENTS LIMITED<br>
-                            <span class="bold">Account Number:</span> 0006203001372<br>
-                            <span class="bold">Branch Code:</span> 280006<br>
-                            <span class="bold">Branch/Swift:</span> FRCGZMLU
-                        {% endif %}
+                        {% include "papers/_bank_details.html" %}
                     </div>
 
                     <div class="section-header" style="margin-top: 15px;">Terms & Notes</div>

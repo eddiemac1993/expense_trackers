@@ -1,0 +1,6 @@
+{% if entry.selected_bank_account %}
+    <div class="bank-details-block" style="font-size: 9px; color: #444; line-height: 1.45;">
+        <strong>{{ entry.selected_bank_account.display_label }}</strong><br>
+        {{ entry.selected_bank_details|linebreaksbr }}
+    </div>
+{% endif %}

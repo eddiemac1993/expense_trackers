@@ -413,17 +413,7 @@ body {
                 </div>
                 <div class="bank-box">
                     <strong>Banking Details:</strong><br>
-                    {% if entry.company.bank_details %}
-                        {{ entry.company.bank_details|linebreaksbr }}
-                    {% else %}
-                        BANK NAME: STANBIC BANK ZAMBIA<br>
-                        ACCOUNT NAME: SOLID CONNECTIONS ZAMBIA LTD<br>
-                        ACCOUNT NUMBER: 9130001606976<br>
-                        BRANCH: LUSAKA MAIN<br>
-                        BRANCH CODE: 040002<br>
-                        SWIFT CODE: SBICZMLX<br>
-                        BANK ADDRESS: WOODGATE HOUSE, HEROES PLACE, CAIRO ROAD, LUSAKA
-                    {% endif %}
+                    {% include "papers/_bank_details.html" %}
                 </div>
                 <div class="signature-area">
                     <div class="sig-line"></div>

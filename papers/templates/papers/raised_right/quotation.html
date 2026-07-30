@@ -251,11 +251,9 @@
                         <li>Please quote the Reference Number when making payments.</li>
                     </ul>
 
-                    {% if entry.company.bank_details %}
+                    {% if entry.selected_bank_account %}
                     <div class="section-header" style="margin-top: 15px;">Bank Details</div>
-                    <div style="font-size: 9px; color: #444;">
-                        {{ entry.company.bank_details|linebreaksbr }}
-                    </div>
+                    {% include "papers/_bank_details.html" %}
                     {% endif %}
                 </td>
                 <td width="45%">

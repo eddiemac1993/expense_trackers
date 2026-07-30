@@ -263,6 +263,11 @@
 
     <div style="clear: both;"></div>
 
+    {% if entry.selected_bank_account %}
+    <div class="section-title">BANK DETAILS</div>
+    {% include "papers/_bank_details.html" %}
+    {% endif %}
+
     <table class="signature-table">
         <tr>
             <td><div class="signature-line">Prepared By</div></td>

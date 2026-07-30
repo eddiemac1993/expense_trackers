@@ -140,7 +140,12 @@ def edit_paper_entry(request, entry_id):
 
 def paper_list(request):
     kind = request.GET.get("kind", PaperEntry.Kind.REAL).strip()
-    qs = PaperEntry.objects.all().order_by("-created_at")
+    qs = (
+        PaperEntry.objects
+        .select_related("company", "client", "bank_account")
+        .all()
+        .order_by("-created_at")
+    )
 
     if kind in (PaperEntry.Kind.REAL, PaperEntry.Kind.SUPPORTING, PaperEntry.Kind.PURCHASE_ORDER):
         qs = qs.filter(kind=kind)
@@ -180,7 +185,10 @@ def paper_template(entry, paper_type):
 
 
 def paper_preview(request, entry_id, paper_type):
-    entry = get_object_or_404(PaperEntry, id=entry_id)
+    entry = get_object_or_404(
+        PaperEntry.objects.select_related("company", "client", "bank_account"),
+        id=entry_id
+    )
     paper_type = effective_paper_type(entry, paper_type)
 
     entry.paper_number = paper_display_number(entry)
@@ -193,7 +201,10 @@ def paper_preview(request, entry_id, paper_type):
 
 
 def paper_pdf(request, entry_id, paper_type):
-    entry = get_object_or_404(PaperEntry, id=entry_id)
+    entry = get_object_or_404(
+        PaperEntry.objects.select_related("company", "client", "bank_account"),
+        id=entry_id
+    )
     paper_type = effective_paper_type(entry, paper_type)
 
     display_number = paper_display_number(entry)

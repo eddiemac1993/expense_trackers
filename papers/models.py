@@ -13,6 +13,87 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def default_bank_account(self):
+        return (
+            self.bank_accounts.filter(is_default=True).first()
+            or self.bank_accounts.first()
+        )
+
+    @property
+    def bank_details(self):
+        bank_account = self.default_bank_account
+        if not bank_account:
+            return ""
+
+        return bank_account.formatted_details
+
+
+class CompanyBankAccount(models.Model):
+    company = models.ForeignKey(
+        Company,
+        related_name="bank_accounts",
+        on_delete=models.CASCADE,
+    )
+    label = models.CharField(max_length=120, blank=True)
+    bank_name = models.CharField(max_length=120)
+    account_name = models.CharField(max_length=255)
+    account_number = models.CharField(max_length=80, blank=True)
+    account_number_usd = models.CharField("USD account number", max_length=80, blank=True)
+    branch = models.CharField(max_length=120, blank=True)
+    branch_code = models.CharField(max_length=80, blank=True)
+    sort_code = models.CharField(max_length=80, blank=True)
+    swift_code = models.CharField(max_length=80, blank=True)
+    notes = models.TextField(blank=True)
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["company__name", "-is_default", "bank_name", "label"]
+
+    def __str__(self):
+        return f"{self.company.name} - {self.display_label}"
+
+    @property
+    def display_label(self):
+        if self.label:
+            return self.label
+
+        if self.branch:
+            return f"{self.bank_name} ({self.branch})"
+
+        return self.bank_name
+
+    @property
+    def formatted_details(self):
+        lines = [
+            f"Bank Name: {self.bank_name}",
+            f"Account Name: {self.account_name}",
+        ]
+
+        if self.account_number:
+            lines.append(f"Account Number: {self.account_number}")
+
+        if self.account_number_usd:
+            lines.append(f"USD Account Number: {self.account_number_usd}")
+
+        if self.branch:
+            lines.append(f"Branch: {self.branch}")
+
+        if self.branch_code:
+            lines.append(f"Branch Code: {self.branch_code}")
+
+        if self.sort_code:
+            lines.append(f"Sort Code: {self.sort_code}")
+
+        if self.swift_code:
+            lines.append(f"SWIFT Code: {self.swift_code}")
+
+        if self.notes:
+            lines.append(self.notes)
+
+        return "\n".join(lines)
+
 
 class Client(models.Model):
     name = models.CharField(max_length=255)
@@ -44,6 +125,13 @@ class PaperEntry(models.Model):
         SUPPORTING = "SUPPORT", "Supporting"
         PURCHASE_ORDER = "PO", "Purchase Order"
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    bank_account = models.ForeignKey(
+        CompanyBankAccount,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="paper_entries",
+    )
 
     # allow empty client on the form; database will still have one after save()
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True)
@@ -90,6 +178,18 @@ class PaperEntry(models.Model):
             return f"{prefix}-{int(raw_number) + 99:04d}"
 
         return raw_number
+
+    @property
+    def selected_bank_account(self):
+        return self.bank_account or self.company.default_bank_account
+
+    @property
+    def selected_bank_details(self):
+        bank_account = self.selected_bank_account
+        if not bank_account:
+            return ""
+
+        return bank_account.formatted_details
 
     def calculate_totals(self):
         self.subtotal = sum(item.amount for item in self.items.all())

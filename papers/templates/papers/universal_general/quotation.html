@@ -306,6 +306,13 @@
         • Please refer to the reference number above for all inquiries.
     </div>
 
+    {% if entry.selected_bank_account %}
+    <div class="notes">
+        <strong>Bank Details</strong><br>
+        {% include "papers/_bank_details.html" %}
+    </div>
+    {% endif %}
+
     <!-- SIGNATURES -->
 <!-- SIGNATURE -->
 <div style="margin-top:25mm; width:80mm;">
